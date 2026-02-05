@@ -11,14 +11,26 @@ import {
   Save,
   FileVideo,
   Music,
-  Settings,
-  Server,
   Check,
   Video,
   Headphones,
-  CheckCircle
+  CheckCircle,
+  Zap,
+  Shield,
+  Globe,
+  Github,
+  Twitter,
+  Mail,
+  Wifi,
+  Settings,
+  Trash2,
+  Bell,
+  Moon,
+  Sun,
+  Palette
 } from 'lucide-react'
 import './App.css'
+import { APP_CONFIG } from './config'
 
 function App() {
   // Tabs: 'video' or 'audio'
@@ -31,98 +43,84 @@ function App() {
   const [history, setHistory] = useState([])
   const [taskId, setTaskId] = useState(null)
 
-  // PWA & Settings
+  // Settings & System State
+  const [showSettings, setShowSettings] = useState(false)
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
+  const [accentColor, setAccentColor] = useState('red') // red, blue, green, purple
+
+  // PWA & Connection
   const [installPrompt, setInstallPrompt] = useState(null)
   const [showInstallBanner, setShowInstallBanner] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
-  const [serverUrl, setServerUrl] = useState('')
-  const [serverUrlInput, setServerUrlInput] = useState('')
-  const [connectionStatus, setConnectionStatus] = useState('unknown')
+  const [connectionStatus, setConnectionStatus] = useState('checking')
 
   const pollIntervalRef = useRef(null)
   const inputRef = useRef(null)
+  const featuresRef = useRef(null)
 
-  // Load server URL
+  // Initialize
   useEffect(() => {
-    const savedServerUrl = localStorage.getItem('vidgrab_server_url')
-    if (savedServerUrl) {
-      setServerUrl(savedServerUrl)
-      setServerUrlInput(savedServerUrl)
-    }
-  }, [])
+    checkConnection()
+    loadSettings()
 
-  // Get API URL
-  const getApiUrl = () => {
-    return serverUrl || import.meta.env.VITE_API_URL || window.location.origin
-  }
-
-  // Test Connection
-  const testConnection = async (urlToTest) => {
-    setConnectionStatus('checking')
-    try {
-      await axios.get(`${urlToTest}/status/test`, { timeout: 5000 })
-      setConnectionStatus('connected')
-      return true
-    } catch (error) {
-      if (error.response) {
-        setConnectionStatus('connected')
-        return true
-      }
-      setConnectionStatus('error')
-      return false
-    }
-  }
-
-  // Save Server URL
-  const saveServerUrl = async () => {
-    let urlToSave = serverUrlInput.trim().replace(/\/$/, '')
-    if (urlToSave && !/^https?:\/\//.test(urlToSave)) {
-      urlToSave = `http://${urlToSave}`
-    }
-
-    if (urlToSave) {
-      const isConnected = await testConnection(urlToSave)
-      if (isConnected) {
-        setServerUrl(urlToSave)
-        setServerUrlInput(urlToSave)
-        localStorage.setItem('vidgrab_server_url', urlToSave)
-        setTimeout(() => setShowSettings(false), 500)
-      }
-    } else {
-      setServerUrl('')
-      localStorage.removeItem('vidgrab_server_url')
-      setConnectionStatus('unknown')
-      setShowSettings(false)
-    }
-  }
-
-  // History Sync
-  useEffect(() => {
-    const savedHistory = localStorage.getItem('vidgrab_history')
-    if (savedHistory) setHistory(JSON.parse(savedHistory))
-  }, [])
-
-  useEffect(() => {
-    localStorage.setItem('vidgrab_history', JSON.stringify(history))
-  }, [history])
-
-  // PWA
-  useEffect(() => {
+    // PWA Install prompt
     const handleBeforeInstall = (e) => {
       e.preventDefault()
       setInstallPrompt(e)
-      setTimeout(() => setShowInstallBanner(true), 2000)
+      setTimeout(() => setShowInstallBanner(true), 3000)
     }
     window.addEventListener('beforeinstallprompt', handleBeforeInstall)
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
   }, [])
 
-  // Polling
+  // Check Backend
+  const checkConnection = async () => {
+    setConnectionStatus('checking')
+    try {
+      await axios.get(`${APP_CONFIG.backendUrl}/status/test`, { timeout: 8000 })
+      setConnectionStatus('connected')
+    } catch (error) {
+      if (error.response) setConnectionStatus('connected')
+      else setConnectionStatus('error')
+    }
+  }
+
+  // Load/Save Settings
+  const loadSettings = () => {
+    const savedHistory = localStorage.getItem('vidgrab_history')
+    if (savedHistory) setHistory(JSON.parse(savedHistory))
+
+    const savedAccent = localStorage.getItem('vidgrab_accent')
+    if (savedAccent) {
+      setAccentColor(savedAccent)
+      document.documentElement.setAttribute('data-theme', savedAccent)
+    }
+  }
+
+  const toggleAccent = (color) => {
+    setAccentColor(color)
+    localStorage.setItem('vidgrab_accent', color)
+    document.documentElement.setAttribute('data-theme', color)
+  }
+
+  const clearHistory = () => {
+    if (confirm('Are you sure you want to clear your download history?')) {
+      setHistory([])
+      localStorage.removeItem('vidgrab_history')
+    }
+  }
+
+  useEffect(() => {
+    if (history.length > 0) {
+      localStorage.setItem('vidgrab_history', JSON.stringify(history))
+    }
+  }, [history])
+
+  // Polling for Download Status
   useEffect(() => {
     if (taskId) {
       pollIntervalRef.current = setInterval(async () => {
         try {
-          const res = await axios.get(`${getApiUrl()}/status/${taskId}`)
+          const res = await axios.get(`${APP_CONFIG.backendUrl}/status/${taskId}`)
           const data = res.data
           setStatus(data)
 
@@ -131,6 +129,9 @@ function App() {
             setLoading(false)
             if (data.status === 'ready') {
               addToHistory(url, data.filename || 'Download', new Date().toLocaleString())
+              if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+                new Notification("Download Ready!", { body: data.filename })
+              }
             }
           }
         } catch (err) {
@@ -139,30 +140,45 @@ function App() {
       }, 1000)
     }
     return () => pollIntervalRef.current && clearInterval(pollIntervalRef.current)
-  }, [taskId, url])
+  }, [taskId, url, notificationsEnabled])
 
   const addToHistory = (link, filename, date) => {
-    setHistory(prev => [{ link, filename, date, type: activeTab }, ...prev].slice(0, 15))
+    setHistory(prev => [{ link, filename, date, type: activeTab }, ...prev].slice(0, 20))
   }
 
   const handleDownload = async (e) => {
     e.preventDefault()
     if (!url) return
 
+    if (connectionStatus === 'error') {
+      // Try one more check before failing
+      await checkConnection()
+      if (connectionStatus === 'error') {
+        setStatus({ status: 'error', message: 'Backend disconnected. Please check your internet.' })
+        return
+      }
+    }
+
     setLoading(true)
-    setStatus({ status: 'queued', message: 'Starting download...' })
+    setStatus({ status: 'queued', message: 'Initiating download...' })
     setTaskId(null)
 
     try {
-      const response = await axios.post(`${getApiUrl()}/download`, {
+      const response = await axios.post(`${APP_CONFIG.backendUrl}/download`, {
         url,
-        format: activeTab, // 'video' or 'audio'
+        format: activeTab,
         quality: activeTab === 'audio' ? 'best' : quality
       })
       setTaskId(response.data.task_id)
+
+      // Request notification permission on first download
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission()
+      }
+
     } catch (error) {
       console.error(error)
-      const errorMsg = error.response?.data?.message || 'Failed to connect to server.'
+      const errorMsg = error.response?.data?.message || 'Failed to start download.'
       setStatus({ status: 'error', message: errorMsg })
       setLoading(false)
     }
@@ -171,18 +187,17 @@ function App() {
   const handleSaveFile = () => {
     if (!taskId || status?.status !== 'ready') return
     const link = document.createElement('a')
-    link.href = `${getApiUrl()}/file/${taskId}`
+    link.href = `${APP_CONFIG.backendUrl}/file/${taskId}`
     link.download = status.filename || 'video'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
 
-    // Reset after save
     setTimeout(() => {
       setStatus(null)
       setTaskId(null)
       setUrl('')
-    }, 1500)
+    }, 2000)
   }
 
   const handlePaste = async () => {
@@ -191,7 +206,7 @@ function App() {
       setUrl(text)
       inputRef.current?.focus()
     } catch (err) {
-      console.error('Failed to read clipboard', err)
+      console.error('Clipboard error', err)
     }
   }
 
@@ -203,210 +218,294 @@ function App() {
     setShowInstallBanner(false)
   }
 
+  const scrollToFeatures = () => {
+    featuresRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   return (
     <div className="app-container">
+
+      <div className="ambient-background"></div>
+
+      {/* Settings Panel (Drawer) */}
+      <div className={`settings-drawer ${showSettings ? 'open' : ''}`}>
+        <div className="drawer-header">
+          <h3><Settings size={20} /> System Settings</h3>
+          <button onClick={() => setShowSettings(false)}><X size={20} /></button>
+        </div>
+        <div className="drawer-content">
+
+          <div className="setting-group">
+            <label>Theme Accent</label>
+            <div className="color-options">
+              <button className={`color-btn red ${accentColor === 'red' ? 'active' : ''}`} onClick={() => toggleAccent('red')}></button>
+              <button className={`color-btn blue ${accentColor === 'blue' ? 'active' : ''}`} onClick={() => toggleAccent('blue')}></button>
+              <button className={`color-btn purple ${accentColor === 'purple' ? 'active' : ''}`} onClick={() => toggleAccent('purple')}></button>
+              <button className={`color-btn green ${accentColor === 'green' ? 'active' : ''}`} onClick={() => toggleAccent('green')}></button>
+            </div>
+          </div>
+
+          <div className="setting-group">
+            <div className="setting-row">
+              <div className="setting-info">
+                <Bell size={18} />
+                <span>Notifications</span>
+              </div>
+              <div className="toggle-switch" onClick={() => setNotificationsEnabled(!notificationsEnabled)}>
+                <div className={`switch-knob ${notificationsEnabled ? 'on' : 'off'}`}></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="setting-group">
+            <label>Data Management</label>
+            <button className="danger-btn" onClick={clearHistory}>
+              <Trash2 size={16} /> Clear Download History
+            </button>
+          </div>
+
+          <div className="setting-group info">
+            <label>System Status</label>
+            <div className={`status-indicator-box ${connectionStatus}`}>
+              {connectionStatus === 'connected' ? <Wifi size={16} /> : <AlertCircle size={16} />}
+              <span>{connectionStatus === 'connected' ? 'Backend Online' : 'Backend Offline'}</span>
+            </div>
+            <small className="version-text">v2.1.0 • VidGrab Core</small>
+          </div>
+
+        </div>
+      </div>
+      {showSettings && <div className="backdrop" onClick={() => setShowSettings(false)}></div>}
+
       {/* Header */}
-      <header className="app-header">
+      <header className="app-header glass-header">
         <div className="logo-container">
           <div className="logo-icon">
-            <span className="logo-x">XH</span>
+            <Download size={24} color="white" />
           </div>
           <div className="logo-text">
-            <h1>MASTER</h1>
-            <span className="logo-subtitle">Video Downloader & Converter</span>
+            <h1>VIDGRAB</h1>
           </div>
         </div>
 
-        <button
-          className={`settings-btn ${showSettings ? 'active' : ''}`}
-          onClick={() => {
-            setShowSettings(true)
-            setConnectionStatus('unknown')
-          }}
-        >
-          <Settings size={20} />
+        <nav className="desktop-nav">
+          <a href="#" className="nav-link active">Home</a>
+          <a href="#features" onClick={(e) => { e.preventDefault(); scrollToFeatures() }} className="nav-link">Features</a>
+          <button className="nav-link icon-only" onClick={() => setShowSettings(true)}>
+            <Settings size={20} />
+          </button>
+        </nav>
+
+        {/* Mobile Settings Trigger */}
+        <button className="mobile-menu-btn" onClick={() => setShowSettings(true)}>
+          <Settings size={22} />
         </button>
       </header>
 
-      {/* Main Content Area */}
-      <main className="main-content">
-
-        {/* Settings Modal */}
-        {showSettings && (
-          <div className="modal-overlay" onClick={() => setShowSettings(false)}>
-            <div className="modal-content glass-panel" onClick={e => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3><Server size={18} /> Server Connection</h3>
-                <button onClick={() => setShowSettings(false)}><X size={18} /></button>
-              </div>
-              <div className="modal-body">
-                <p className="hint-text">Enter the URL of your Backend Server.</p>
-                <div className="input-group">
-                  <input
-                    type="text"
-                    value={serverUrlInput}
-                    onChange={e => {
-                      setServerUrlInput(e.target.value)
-                      setConnectionStatus('unknown')
-                    }}
-                    placeholder="http://localhost:5000"
-                    className="modal-input"
-                  />
-                </div>
-                {connectionStatus === 'connected' && <div className="status-badge success"><Check size={14} /> Connected</div>}
-                {connectionStatus === 'error' && <div className="status-badge error"><AlertCircle size={14} /> Connection Failed</div>}
-
-                <button className="primary-btn full-width" onClick={saveServerUrl}>
-                  {connectionStatus === 'checking' ? <Loader2 size={18} className="animate-spin" /> : 'Save & Connect'}
-                </button>
-              </div>
-            </div>
+      {/* Hero Section */}
+      <section className="hero-section">
+        <div className="hero-content">
+          <div className="status-badge-pill">
+            <span className={`dot ${connectionStatus}`}></span>
+            {connectionStatus === 'connected' ? 'System Operational' : 'Connecting...'}
           </div>
-        )}
 
-        {/* Tab Switcher */}
-        <div className="tab-switcher">
-          <button
-            className={`tab-btn ${activeTab === 'video' ? 'active' : ''}`}
-            onClick={() => setActiveTab('video')}
-          >
-            <Video size={18} />
-            <span>Video Downloader</span>
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'audio' ? 'active' : ''}`}
-            onClick={() => setActiveTab('audio')}
-          >
-            <Headphones size={18} />
-            <span>YouTube to MP3</span>
-          </button>
-        </div>
+          <h2 className="hero-title">Universal Video<br /><span className="highlight-text">Downloader</span></h2>
+          <p className="hero-subtitle">High-speed downloads from thousands of sites. Now with smart link detection and enhanced privacy.</p>
 
-        {/* Downloader Card */}
-        <div className="downloader-card glass-panel">
-          <form onSubmit={handleDownload}>
-            <div className="url-input-container">
-              <input
-                ref={inputRef}
-                type="url"
-                className="main-url-input"
-                placeholder={activeTab === 'video' ? "Paste video URL..." : "Paste YouTube URL for MP3..."}
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                disabled={loading}
-              />
-              <div className="input-tools">
-                {url && <button type="button" onClick={() => setUrl('')}><X size={18} /></button>}
-                <button type="button" onClick={handlePaste}><Clipboard size={18} /></button>
-              </div>
+          <div className="downloader-wrapper">
+
+            {/* Tab Switcher */}
+            <div className="main-tabs">
+              <button
+                className={`main-tab ${activeTab === 'video' ? 'active' : ''}`}
+                onClick={() => setActiveTab('video')}
+              >
+                <Video size={18} /> Video
+              </button>
+              <button
+                className={`main-tab ${activeTab === 'audio' ? 'active' : ''}`}
+                onClick={() => setActiveTab('audio')}
+              >
+                <Headphones size={18} /> Audio
+              </button>
             </div>
 
-            {/* Quality Options (Video Only) */}
-            {activeTab === 'video' && (
-              <div className="options-container">
-                <label>Quality:</label>
-                <select value={quality} onChange={e => setQuality(e.target.value)} disabled={loading}>
-                  <option value="best">Best Available</option>
-                  <option value="1080">Full HD (1080p)</option>
-                  <option value="720">HD (720p)</option>
-                  <option value="480">Standard (480p)</option>
-                  <option value="360">Data Saver (360p)</option>
-                </select>
-              </div>
-            )}
+            {/* Input Card */}
+            <div className="input-card glass-panel glow-border">
+              <form onSubmit={handleDownload}>
+                <div className="input-wrapper">
+                  <input
+                    ref={inputRef}
+                    type="url"
+                    className="hero-input"
+                    placeholder="Paste link here..."
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    disabled={loading}
+                  />
+                  <div className="input-actions">
+                    {url && <button type="button" onClick={() => setUrl('')}><X size={18} /></button>}
+                    <button type="button" className="paste-btn" onClick={handlePaste}>
+                      <Clipboard size={18} /> <span className="hide-mobile">Paste</span>
+                    </button>
+                  </div>
+                </div>
 
-            {/* Main Action Button */}
-            {!status || status.status !== 'ready' ? (
-              <button
-                type="submit"
-                className={`action-btn ${loading ? 'loading' : ''}`}
-                disabled={!url || loading}
-              >
-                {loading ? <Loader2 className="animate-spin" /> : <Download />}
-                {loading ? 'Processing...' : (activeTab === 'audio' ? 'Convert to MP3' : 'Download Video')}
-              </button>
-            ) : (
-              <button type="button" className="action-btn success" onClick={handleSaveFile}>
-                <Save />
-                Save {status.filename} ({status.file_size_str})
-              </button>
-            )}
-          </form>
-
-          {/* Status Display */}
-          {status && (
-            <div className={`status-display ${status.status}`}>
-              <div className="status-main">
-                {status.status === 'downloading' && <div className="loader-ring"></div>}
-                {status.status === 'error' && <AlertCircle className="error-icon" />}
-                {status.status === 'ready' && <CheckCircle className="success-icon" />}
-                <div className="status-info">
-                  <span className="status-message">{status.message}</span>
-                  {status.status === 'downloading' && (
-                    <div className="progress-details">
-                      <div className="progress-bar-container">
-                        <div className="progress-bar-fill" style={{ width: `${status.progress}%` }}></div>
-                      </div>
-                      <div className="progress-stats">
-                        <span>{status.progress.toFixed(1)}%</span>
-                        <span>{status.speed}</span>
-                        <span>{status.eta}</span>
-                      </div>
+                {activeTab === 'video' && (
+                  <div className="quality-selector">
+                    <span>Quality:</span>
+                    <div className="quality-pills">
+                      {['best', '1080', '720', '480'].map(q => (
+                        <button
+                          key={q}
+                          type="button"
+                          className={`q-pill ${quality === q ? 'selected' : ''}`}
+                          onClick={() => setQuality(q)}
+                        >
+                          {q === 'best' ? 'Max' : q + 'p'}
+                        </button>
+                      ))}
                     </div>
+                  </div>
+                )}
+
+                <div className="action-area">
+                  {!status || status.status !== 'ready' ? (
+                    <button
+                      type="submit"
+                      className={`download-btn ${loading ? 'processing' : ''}`}
+                      disabled={!url || loading}
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="animate-spin" /> Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="btn-icon" /> {activeTab === 'audio' ? 'Convert' : 'Download'}
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <button type="button" className="download-btn success" onClick={handleSaveFile}>
+                      <Save className="btn-icon" /> Save File
+                    </button>
                   )}
                 </div>
-              </div>
+              </form>
 
-              {/* Logs */}
-              {status.logs && status.logs.length > 0 && (
-                <div className="logs-preview">
-                  {status.logs.slice(-2).map((log, i) => (
-                    <div key={i} className="log-line-small">{log}</div>
-                  ))}
+              {/* Live Status */}
+              {status && (
+                <div className={`live-status ${status.status}`}>
+                  <div className="status-header">
+                    <span className="status-label">
+                      {status.status === 'downloading' && 'Downloading...'}
+                      {status.status === 'queued' && 'Queued...'}
+                      {status.status === 'error' && 'Failed'}
+                      {status.status === 'ready' && 'Complete'}
+                    </span>
+                    {status.status === 'downloading' && <span className="status-percent">{status.progress.toFixed(0)}%</span>}
+                  </div>
+
+                  {status.status === 'downloading' && (
+                    <div className="progress-track">
+                      <div className="progress-fill" style={{ width: `${status.progress}%` }}></div>
+                    </div>
+                  )}
+
+                  {status.message && <p className="status-msg">{status.message}</p>}
                 </div>
               )}
             </div>
-          )}
-        </div>
-
-        {/* Recent History */}
-        {history.length > 0 && (
-          <div className="history-section">
-            <h3 className="section-title"><History size={16} /> Recent Downloads</h3>
-            <div className="history-list">
-              {history.map((item, i) => (
-                <div key={i} className="history-card glass-panel" onClick={() => setUrl(item.link)}>
-                  <div className="history-icon">
-                    {item.type === 'audio' ? <Music size={16} /> : <FileVideo size={16} />}
-                  </div>
-                  <div className="history-info">
-                    <div className="history-name" title={item.filename}>{item.filename}</div>
-                    <div className="history-date">{item.date}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
-        )}
+        </div>
+      </section>
 
-      </main>
+      {/* History Grid */}
+      {history.length > 0 && (
+        <section className="section history-grid-section">
+          <div className="section-head">
+            <h3><History size={18} /> Recent Downloads</h3>
+          </div>
+          <div className="downloads-grid">
+            {history.map((item, i) => (
+              <div key={i} className="download-item glass-panel" onClick={() => { setUrl(item.link); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
+                <div className="item-icon">
+                  {item.type === 'audio' ? <Music /> : <FileVideo />}
+                </div>
+                <div className="item-details">
+                  <h4>{item.filename}</h4>
+                  <span>{item.date}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Feature Highlights */}
+      <section className="section features-section" id="features" ref={featuresRef}>
+        <div className="features-container">
+          <div className="feature-box">
+            <Zap className="f-icon" />
+            <h4>Turbo Engine</h4>
+            <p>Backend powered by high-performance servers for max speed.</p>
+          </div>
+          <div className="feature-box">
+            <Shield className="f-icon" />
+            <h4>Secure Core</h4>
+            <p>No logs, no tracking. Your downloads are your business.</p>
+          </div>
+          <div className="feature-box">
+            <Globe className="f-icon" />
+            <h4>Universal</h4>
+            <p>Supports 1000+ sites including xHamster, YouTube, Twitter.</p>
+          </div>
+        </div>
+      </section>
+
+      <footer className="simple-footer">
+        <p>VidGrab &copy; 2026</p>
+        <div className="socials">
+          <Github size={18} />
+          <Twitter size={18} />
+        </div>
+      </footer>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="mobile-bottom-nav">
+        <button className="mob-nav-item active" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          <div className="mob-icon"><Video size={20} /></div>
+          <span>Home</span>
+        </button>
+        <button className="mob-nav-item" onClick={() => {
+          const el = document.querySelector('.history-grid-section');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }}>
+          <div className="mob-icon"><History size={20} /></div>
+          <span>History</span>
+        </button>
+        <button className="mob-nav-item" onClick={() => setShowSettings(true)}>
+          <div className="mob-icon"><Settings size={20} /></div>
+          <span>Settings</span>
+        </button>
+      </div>
 
       {/* Install Banner */}
       {showInstallBanner && (
-        <div className="install-banner glass-panel">
-          <div className="install-info">
+        <div className="pwa-banner glass-panel slide-up">
+          <div className="pwa-content">
             <Smartphone size={24} />
             <div>
               <strong>Install App</strong>
               <p>Add to home screen</p>
             </div>
           </div>
-          <div className="install-actions">
-            <button onClick={() => setShowInstallBanner(false)}>Later</button>
-            <button className="primary-btn small" onClick={handleInstall}>Install</button>
-          </div>
+          <button className="install-btn" onClick={handleInstall}>Install Now</button>
         </div>
       )}
+
     </div>
   )
 }

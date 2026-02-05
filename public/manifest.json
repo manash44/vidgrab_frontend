@@ -1,7 +1,7 @@
 {
-  "name": "XHMaster - Premium Video Downloader",
-  "short_name": "XHMaster",
-  "description": "Premium Video Downloader and Converter. Fast, clean, and masterfully simple.",
+  "name": "VidGrab - Download Video Offline",
+  "short_name": "VidGrab",
+  "description": "Download video offline from anywhere.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f0f0f",
