@@ -132,6 +132,7 @@ function App() {
               if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
                 new Notification("Download Ready!", { body: data.filename })
               }
+              handleAutoDownload(taskId, data.filename)
             }
           }
         } catch (err) {
@@ -184,20 +185,27 @@ function App() {
     }
   }
 
-  const handleSaveFile = () => {
-    if (!taskId || status?.status !== 'ready') return
+  const triggerDownload = (id, filename) => {
     const link = document.createElement('a')
-    link.href = `${APP_CONFIG.backendUrl}/file/${taskId}`
-    link.download = status.filename || 'video'
+    link.href = `${APP_CONFIG.backendUrl}/file/${id}`
+    link.download = filename || 'video'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
 
+  const handleAutoDownload = (id, filename) => {
+    triggerDownload(id, filename)
     setTimeout(() => {
       setStatus(null)
       setTaskId(null)
       setUrl('')
     }, 2000)
+  }
+
+  const handleSaveFile = () => {
+    if (!taskId || status?.status !== 'ready') return
+    triggerDownload(taskId, status.filename)
   }
 
   const handlePaste = async () => {
@@ -388,8 +396,8 @@ function App() {
                       )}
                     </button>
                   ) : (
-                    <button type="button" className="download-btn success" onClick={handleSaveFile}>
-                      <Save className="btn-icon" /> Save File
+                    <button type="button" className="download-btn success" disabled>
+                      <CheckCircle className="btn-icon" /> Download Started!
                     </button>
                   )}
                 </div>
@@ -419,30 +427,32 @@ function App() {
               )}
             </div>
           </div>
-        </div>
-      </section>
+        </div >
+      </section >
 
       {/* History Grid */}
-      {history.length > 0 && (
-        <section className="section history-grid-section">
-          <div className="section-head">
-            <h3><History size={18} /> Recent Downloads</h3>
-          </div>
-          <div className="downloads-grid">
-            {history.map((item, i) => (
-              <div key={i} className="download-item glass-panel" onClick={() => { setUrl(item.link); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
-                <div className="item-icon">
-                  {item.type === 'audio' ? <Music /> : <FileVideo />}
+      {
+        history.length > 0 && (
+          <section className="section history-grid-section">
+            <div className="section-head">
+              <h3><History size={18} /> Recent Downloads</h3>
+            </div>
+            <div className="downloads-grid">
+              {history.map((item, i) => (
+                <div key={i} className="download-item glass-panel" onClick={() => { setUrl(item.link); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
+                  <div className="item-icon">
+                    {item.type === 'audio' ? <Music /> : <FileVideo />}
+                  </div>
+                  <div className="item-details">
+                    <h4>{item.filename}</h4>
+                    <span>{item.date}</span>
+                  </div>
                 </div>
-                <div className="item-details">
-                  <h4>{item.filename}</h4>
-                  <span>{item.date}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+              ))}
+            </div>
+          </section>
+        )
+      }
 
       {/* Feature Highlights */}
       <section className="section features-section" id="features" ref={featuresRef}>
@@ -493,20 +503,22 @@ function App() {
       </div>
 
       {/* Install Banner */}
-      {showInstallBanner && (
-        <div className="pwa-banner glass-panel slide-up">
-          <div className="pwa-content">
-            <Smartphone size={24} />
-            <div>
-              <strong>Install App</strong>
-              <p>Add to home screen</p>
+      {
+        showInstallBanner && (
+          <div className="pwa-banner glass-panel slide-up">
+            <div className="pwa-content">
+              <Smartphone size={24} />
+              <div>
+                <strong>Install App</strong>
+                <p>Add to home screen</p>
+              </div>
             </div>
+            <button className="install-btn" onClick={handleInstall}>Install Now</button>
           </div>
-          <button className="install-btn" onClick={handleInstall}>Install Now</button>
-        </div>
-      )}
+        )
+      }
 
-    </div>
+    </div >
   )
 }
 
