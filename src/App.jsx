@@ -248,10 +248,20 @@ function App() {
 
   const handleAutoDownload = (id) => {
     triggerDownload(id)
-    // We do NOT clear the status automatically. 
-    // This allows the "File Ready" button to remain visible for manual saving if the auto-download was blocked.
-    // The status will be cleared when the user pastes a new link.
-    setTaskId(null)
+
+    // Feedback: Update UI to show we triggered it
+    setStatus(prev => ({ ...prev, message: 'Download Started - Check your files!' }))
+
+    // Auto-clear logic to allow seamless next download
+    // User requested: "after processing it should automatically download [and] I should don't have to pressed the button"
+    // Also "when its properly clear then i can download new video"
+
+    setTimeout(() => {
+      // Only clear if status is still 'ready' (user hasn't started another download)
+      setStatus(prev => (prev && prev.status === 'ready' ? null : prev))
+      setTaskId(null)
+      setUrl('')
+    }, 4000) // 4 seconds to see "Ready" then auto-reset
   }
 
   const handleSaveFile = () => {

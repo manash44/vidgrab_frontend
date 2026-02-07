@@ -117,7 +117,8 @@ const HomePage = ({
                                         </button>
                                     ) : (
                                         <button type="button" className="download-btn success" onClick={handleSaveFile}>
-                                            <CheckCircle className="btn-icon" /> File Ready - Click to Save
+                                            <CheckCircle className="btn-icon" />
+                                            {status.message && status.message.includes('Started') ? 'Downloading...' : 'Click to Save File'}
                                         </button>
                                     )}
                                 </div>
