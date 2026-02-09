@@ -226,6 +226,19 @@ function App() {
           }
         } catch (err) {
           console.error("Polling error", err)
+          // Determine if it's a 404 (Task Lost / Server Restart) or Network Error
+          if (err.response && err.response.status === 404) {
+            clearInterval(pollIntervalRef.current)
+            setLoading(false)
+            setStatus({
+              status: 'error',
+              message: 'Session timed out or server restarted. Please try again.'
+            })
+          } else {
+            // Optional: count retries? For now just log. 
+            // If completely offline, maybe show error? 
+            // But transient network issues shouldn't break the UI immediately.
+          }
         }
       }, 1000)
     }
