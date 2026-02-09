@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import axios from 'axios'
 import {
   Settings,
@@ -50,9 +50,113 @@ function App() {
   const inputRef = useRef(null)
   const featuresRef = useRef(null)
 
+  const addToHistory = useCallback((link, filename, date) => {
+    setHistory(prev => [{ link, filename, date, type: activeTab }, ...prev].slice(0, 20))
+  }, [activeTab])
+
+  const triggerDownload = useCallback((id) => {
+    const downloadUrl = `${APP_CONFIG.backendUrl}/file/${id}`
+
+    // Use window.location.assign for reliable file download trigger on mobile & desktop
+    // This works because the backend should serve the file as an attachment.
+    try {
+      window.location.assign(downloadUrl)
+    } catch (e) {
+      console.error("Download trigger failed:", e)
+      // Fallback
+      window.open(downloadUrl, '_blank')
+    }
+  }, [])
+
+  const handleAutoDownload = useCallback((id, filename, fileSize) => {
+    triggerDownload(id)
+
+    // Feedback: Update UI to show we triggered it
+    setStatus({
+      status: 'ready',
+      message: 'Download Started - Check your files!',
+      filename: filename,
+      id: id,
+      fileSize: fileSize
+    })
+
+    // Auto-clear logic to allow seamless next download
+    // User requested: "after processing it should automatically download [and] I should don't have to pressed the button"
+    // Also "when its properly clear then i can download new video"
+
+    setTimeout(() => {
+      // Only clear if status is still 'ready' (user hasn't started another download)
+      setStatus(prev => (prev && prev.status === 'ready' ? null : prev))
+      setTaskId(null)
+      setUrl('')
+    }, 4000) // 4 seconds to see "Ready" then auto-reset
+  }, [triggerDownload])
+
+  async function checkClipboard() {
+    try {
+      const { type, value } = await CapacitorClipboard.read();
+      console.log(`Clipboard type: ${type}, value: ${value}`);
+      if (value && (value.startsWith('http') || value.startsWith('www'))) {
+        setUrl(value);
+        // Optional: Auto-trigger download logic here if desired, 
+        // but usually safest to just populate input for review
+      }
+    } catch (err) {
+      console.log('Clipboard read failed (native) or not supported:', err);
+      // Fallback for web
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text && (text.startsWith('http') || text.startsWith('www'))) {
+          setUrl(text);
+        }
+      } catch (e) { console.error(e) }
+    }
+  }
+
+  async function checkIntent() {
+    try {
+      const result = await SendIntent.checkSendIntentReceived();
+      if (result && result.url) {
+        // result.url usually contains the shared text/link
+        setUrl(result.url);
+        // If shared, we might want to auto-show a modal or trigger simply
+        // For now, setting URL is effective.
+        // We can mimic "popup" behavior by setting view to 'home'
+        setView('home');
+      }
+    } catch (err) {
+      console.log('SendIntent plugin error:', err);
+    }
+  }
+
+  // Check Backend
+  async function checkConnection(setChecking = true) {
+    if (setChecking) setConnectionStatus('checking')
+    try {
+      await axios.get(`${APP_CONFIG.backendUrl}/status/test`, { timeout: 8000 })
+      setConnectionStatus('connected')
+    } catch (error) {
+      if (error.response) setConnectionStatus('connected')
+      else setConnectionStatus('error')
+    }
+  }
+
+  // Load/Save Settings
+  function loadSettings() {
+    const savedHistory = localStorage.getItem('vidgrab_history')
+    if (savedHistory) setHistory(JSON.parse(savedHistory))
+
+    const savedAccent = localStorage.getItem('vidgrab_accent')
+    if (savedAccent) {
+      setAccentColor(savedAccent)
+      document.documentElement.setAttribute('data-theme', savedAccent)
+    }
+  }
+
   // Initialize
   useEffect(() => {
-    checkConnection()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    checkConnection(false)
     loadSettings()
     checkClipboard()
     checkIntent()
@@ -74,66 +178,7 @@ function App() {
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
   }, [])
 
-  const checkClipboard = async () => {
-    try {
-      const { type, value } = await CapacitorClipboard.read();
-      console.log(`Clipboard type: ${type}, value: ${value}`);
-      if (value && (value.startsWith('http') || value.startsWith('www'))) {
-        setUrl(value);
-        // Optional: Auto-trigger download logic here if desired, 
-        // but usually safest to just populate input for review
-      }
-    } catch (err) {
-      console.log('Clipboard read failed (native) or not supported:', err);
-      // Fallback for web
-      try {
-        const text = await navigator.clipboard.readText();
-        if (text && (text.startsWith('http') || text.startsWith('www'))) {
-          setUrl(text);
-        }
-      } catch (e) { console.error(e) }
-    }
-  }
 
-  const checkIntent = async () => {
-    try {
-      const result = await SendIntent.checkSendIntentReceived();
-      if (result && result.url) {
-        // result.url usually contains the shared text/link
-        setUrl(result.url);
-        // If shared, we might want to auto-show a modal or trigger simply
-        // For now, setting URL is effective.
-        // We can mimic "popup" behavior by setting view to 'home'
-        setView('home');
-      }
-    } catch (err) {
-      console.log('SendIntent plugin error:', err);
-    }
-  }
-
-  // Check Backend
-  const checkConnection = async () => {
-    setConnectionStatus('checking')
-    try {
-      await axios.get(`${APP_CONFIG.backendUrl}/status/test`, { timeout: 8000 })
-      setConnectionStatus('connected')
-    } catch (error) {
-      if (error.response) setConnectionStatus('connected')
-      else setConnectionStatus('error')
-    }
-  }
-
-  // Load/Save Settings
-  const loadSettings = () => {
-    const savedHistory = localStorage.getItem('vidgrab_history')
-    if (savedHistory) setHistory(JSON.parse(savedHistory))
-
-    const savedAccent = localStorage.getItem('vidgrab_accent')
-    if (savedAccent) {
-      setAccentColor(savedAccent)
-      document.documentElement.setAttribute('data-theme', savedAccent)
-    }
-  }
 
   const toggleAccent = (color) => {
     setAccentColor(color)
@@ -161,18 +206,22 @@ function App() {
         try {
           const res = await axios.get(`${APP_CONFIG.backendUrl}/status/${taskId}`)
           const data = res.data
-          setStatus(data)
-
-          if (data.status === 'ready' || data.status === 'error') {
+          if (data.status === 'ready') {
             clearInterval(pollIntervalRef.current)
             setLoading(false)
-            if (data.status === 'ready') {
-              addToHistory(url, data.filename || 'Download', new Date().toLocaleString())
-              if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
-                new Notification("Download Ready!", { body: data.filename })
-              }
-              handleAutoDownload(taskId, data.filename)
+
+            addToHistory(url, data.filename || 'Download', new Date().toLocaleString())
+            if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+              new Notification("Download Ready!", { body: data.filename })
             }
+            handleAutoDownload(taskId, data.filename, data.file_size_str || data.size)
+          } else if (data.status === 'error') {
+            clearInterval(pollIntervalRef.current)
+            setLoading(false)
+            setStatus(data)
+          } else {
+            // Only update status if incorrectly 'ready' or other intermediate state
+            setStatus(data)
           }
         } catch (err) {
           console.error("Polling error", err)
@@ -180,11 +229,9 @@ function App() {
       }, 1000)
     }
     return () => pollIntervalRef.current && clearInterval(pollIntervalRef.current)
-  }, [taskId, url, notificationsEnabled])
+  }, [taskId, url, notificationsEnabled, addToHistory, handleAutoDownload])
 
-  const addToHistory = (link, filename, date) => {
-    setHistory(prev => [{ link, filename, date, type: activeTab }, ...prev].slice(0, 20))
-  }
+
 
   const handleDownload = async (e) => {
     e.preventDefault()
@@ -224,45 +271,7 @@ function App() {
     }
   }
 
-  const triggerDownload = (id) => {
-    const downloadUrl = `${APP_CONFIG.backendUrl}/file/${id}`
 
-    // Strategy: Hidden Iframe
-    // This is often the most reliable way to trigger a download without
-    // navigating the page away or getting blocked by some popup blockers.
-    try {
-      const iframe = document.createElement('iframe')
-      iframe.style.display = 'none'
-      iframe.src = downloadUrl
-      document.body.appendChild(iframe)
-
-      // Cleanup after 2 minutes
-      setTimeout(() => {
-        if (iframe.parentNode) document.body.removeChild(iframe)
-      }, 120000)
-    } catch (e) {
-      console.error("Iframe download failed, falling back to location:", e)
-      window.location.assign(downloadUrl)
-    }
-  }
-
-  const handleAutoDownload = (id) => {
-    triggerDownload(id)
-
-    // Feedback: Update UI to show we triggered it
-    setStatus(prev => ({ ...prev, message: 'Download Started - Check your files!' }))
-
-    // Auto-clear logic to allow seamless next download
-    // User requested: "after processing it should automatically download [and] I should don't have to pressed the button"
-    // Also "when its properly clear then i can download new video"
-
-    setTimeout(() => {
-      // Only clear if status is still 'ready' (user hasn't started another download)
-      setStatus(prev => (prev && prev.status === 'ready' ? null : prev))
-      setTaskId(null)
-      setUrl('')
-    }, 4000) // 4 seconds to see "Ready" then auto-reset
-  }
 
   const handleSaveFile = () => {
     if (!status || status.status !== 'ready') return

@@ -118,7 +118,9 @@ const HomePage = ({
                                     ) : (
                                         <button type="button" className="download-btn success" onClick={handleSaveFile}>
                                             <CheckCircle className="btn-icon" />
-                                            {status.message && status.message.includes('Started') ? 'Downloading...' : 'Click to Save File'}
+                                            {status.message && status.message.includes('Started') ?
+                                                <span>Downloading... {status.fileSize && `(${status.fileSize})`}</span> :
+                                                'Click to Save File'}
                                         </button>
                                     )}
                                 </div>
@@ -134,6 +136,11 @@ const HomePage = ({
                                             {status.status === 'error' && 'Failed'}
                                             {status.status === 'ready' && 'Complete'}
                                         </span>
+                                        {(status.size || status.fileSize || status.file_size_str) && (
+                                            <span className="status-size" style={{ marginLeft: 'auto', marginRight: '10px', opacity: 0.8, fontSize: '0.9em' }}>
+                                                {status.size || status.fileSize || status.file_size_str}
+                                            </span>
+                                        )}
                                         {status.status === 'downloading' && <span className="status-percent">{status.progress.toFixed(0)}%</span>}
                                     </div>
 
