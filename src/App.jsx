@@ -58,14 +58,25 @@ function App() {
   const triggerDownload = useCallback((id) => {
     const downloadUrl = `${APP_CONFIG.backendUrl}/file/${id}`
 
-    // Use window.location.assign for reliable file download trigger on mobile & desktop
-    // This works because the backend should serve the file as an attachment.
+    // rigorous download trigger for mobile
     try {
-      window.location.assign(downloadUrl)
+      // Method 1: Create invisible anchor and click it (Best for mobile)
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', ''); // Force download attribute
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
     } catch (e) {
-      console.error("Download trigger failed:", e)
-      // Fallback
-      window.open(downloadUrl, '_blank')
+      console.error("Link click download failed:", e)
+      try {
+        // Method 2: Window location (Standard fallback)
+        window.location.assign(downloadUrl)
+      } catch (e2) {
+        // Method 3: New window (Last resort, might be blocked)
+        window.open(downloadUrl, '_blank')
+      }
     }
   }, [])
 
@@ -75,22 +86,15 @@ function App() {
     // Feedback: Update UI to show we triggered it
     setStatus({
       status: 'ready',
-      message: 'Download Started - Check your files!',
+      message: 'Download Started... If not, click the button below.',
       filename: filename,
       id: id,
       fileSize: fileSize
     })
 
-    // Auto-clear logic to allow seamless next download
-    // User requested: "after processing it should automatically download [and] I should don't have to pressed the button"
-    // Also "when its properly clear then i can download new video"
-
-    setTimeout(() => {
-      // Only clear if status is still 'ready' (user hasn't started another download)
-      setStatus(prev => (prev && prev.status === 'ready' ? null : prev))
-      setTaskId(null)
-      setUrl('')
-    }, 4000) // 4 seconds to see "Ready" then auto-reset
+    // REMOVED: Auto-clear logic.
+    // We keep the "Ready" state active so users can manually click "Download" 
+    // if the auto-trigger was blocked by their mobile browser.
   }, [triggerDownload])
 
   async function checkClipboard() {
@@ -290,7 +294,7 @@ function App() {
   const handleSaveFile = () => {
     if (!status || status.status !== 'ready') return
     // Manual trigger if auto failed
-    window.location.assign(`${APP_CONFIG.backendUrl}/file/${status.id}`)
+    triggerDownload(status.id)
   }
 
   const handlePaste = async () => {
