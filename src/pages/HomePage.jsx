@@ -201,7 +201,7 @@ const HomePage = ({
                                             </div>
                                         )}
 
-                                        {status.message && <p className="status-msg">{status.message}</p>}
+                                        {status.message && <p className="status-msg">{status.message === 'Processing conversion...' ? 'Finalizing video... please wait' : status.message}</p>}
                                     </div>
                                 )}
                             </div>
