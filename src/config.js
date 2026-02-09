@@ -1,5 +1,5 @@
 export const APP_CONFIG = {
-    name: "VidGrab",
+    name: "VidGetNow",
     subtitle: "Download video offline from anywhere",
     description: "The fast, free, and secure way to download videos.",
     backendUrl: "https://backend-iu1e.onrender.com"

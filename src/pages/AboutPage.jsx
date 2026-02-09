@@ -7,7 +7,7 @@ const AboutPage = () => {
             <div className="about-container">
                 {/* Hero Section */}
                 <div className="about-hero">
-                    <h1>About <span className="highlight-text">VidGrab</span></h1>
+                    <h1>About <span className="highlight-text">VidGetNow</span></h1>
                     <p className="about-subtitle">The world's most advanced, privacy-focused video downloader.</p>
                 </div>
 
@@ -21,12 +21,12 @@ const AboutPage = () => {
                     <div className="about-card glass-panel">
                         <div className="icon-wrapper"><Shield size={24} className="text-accent" /></div>
                         <h3>Privacy First</h3>
-                        <p>We believe in digital freedom. VidGrab operates with a strict no-logs policy. We don't track your downloads, your IP, or your personal data. What you download is your business.</p>
+                        <p>We believe in digital freedom. VidGetNow operates with a strict no-logs policy. We don't track your downloads, your IP, or your personal data. What you download is your business.</p>
                     </div>
                     <div className="about-card glass-panel">
                         <div className="icon-wrapper"><Globe size={24} className="text-accent" /></div>
                         <h3>Universal Support</h3>
-                        <p>From social media giants like Twitter and Instagram to video platforms like YouTube and Vimeo, VidGrab supports over 1000+ websites with a single click.</p>
+                        <p>From social media giants like Twitter and Instagram to video platforms like YouTube and Vimeo, VidGetNow supports over 1000+ websites with a single click.</p>
                     </div>
                 </div>
 
@@ -38,8 +38,8 @@ const AboutPage = () => {
                     </div>
 
                     <div className="faq-item">
-                        <h4>Is VidGrab really free?</h4>
-                        <p>Yes, VidGrab is 100% free to use. We rely on unintrusive advertising and community donations to keep our high-performance servers running.</p>
+                        <h4>Is VidGetNow really free?</h4>
+                        <p>Yes, VidGetNow is 100% free to use. We rely on unintrusive advertising and community donations to keep our high-performance servers running.</p>
                     </div>
 
                     <div className="faq-item">
@@ -49,12 +49,12 @@ const AboutPage = () => {
 
                     <div className="faq-item">
                         <h4>Is it legal?</h4>
-                        <p>VidGrab is a tool designed for personal backup and educational purposes. We do not endorse copyright infringement. Please respect the rights of content creators.</p>
+                        <p>VidGetNow is a tool designed for personal backup and educational purposes. We do not endorse copyright infringement. Please respect the rights of content creators.</p>
                     </div>
 
                     <div className="faq-item">
                         <h4>How do I install the App?</h4>
-                        <p>VidGrab is a Progressive Web App (PWA). You can install it directly from your browser by tapping "Add to Home Screen" in your browser's menu, or by clicking the install button in the settings.</p>
+                        <p>VidGetNow is a Progressive Web App (PWA). You can install it directly from your browser by tapping "Add to Home Screen" in your browser's menu, or by clicking the install button in the settings.</p>
                     </div>
                 </div>
 
@@ -68,7 +68,7 @@ const AboutPage = () => {
                         <Twitter size={24} />
                         <span>Twitter</span>
                     </a>
-                    <a href="mailto:support@vidgrab.app" className="link-card glass-panel">
+                    <a href="mailto:support@vidgetnow.app" className="link-card glass-panel">
                         <Mail size={24} />
                         <span>Support</span>
                     </a>
@@ -79,7 +79,7 @@ const AboutPage = () => {
                 </div>
 
                 <div className="about-footer">
-                    <p>Built with ❤️ by the VidGrab Team.</p>
+                    <p>Built with ❤️ by the VidGetNow Team.</p>
                     <p className="version">Version 2.1.0 (Stable)</p>
                 </div>
             </div>

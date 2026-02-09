@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vidgrab-v1';
+const CACHE_NAME = 'vidgetnow-v1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -33,8 +33,8 @@ self.addEventListener('activate', (event) => {
 // Fetch event - network first, fallback to cache
 self.addEventListener('fetch', (event) => {
   // Skip API requests - always go to network
-  if (event.request.url.includes('/download') || 
-      event.request.url.includes('/status/')) {
+  if (event.request.url.includes('/download') ||
+    event.request.url.includes('/status/')) {
     return;
   }
 

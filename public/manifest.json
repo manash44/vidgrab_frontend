@@ -1,6 +1,6 @@
 {
-  "name": "VidGrab - Download Video Offline",
-  "short_name": "VidGrab",
+  "name": "VidGetNow - Download Video Offline",
+  "short_name": "VidGetNow",
   "description": "Download video offline from anywhere.",
   "start_url": "/",
   "display": "standalone",

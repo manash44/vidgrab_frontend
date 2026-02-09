@@ -244,7 +244,7 @@ const HomePage = ({
                     </div>
 
                     <div className="sidebar-card info-card">
-                        <h4>Why use VidGrab?</h4>
+                        <h4>Why use VidGetNow?</h4>
                         <p>We use advanced clustered servers to split files into chunks, maximizing your bandwidth for up to 5x faster downloads compared to browser standards.</p>
                         <div className="mini-feature">
                             <Zap size={14} className="text-accent" /> Lightning Fast

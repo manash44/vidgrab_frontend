@@ -144,10 +144,10 @@ function App() {
 
   // Load/Save Settings
   function loadSettings() {
-    const savedHistory = localStorage.getItem('vidgrab_history')
+    const savedHistory = localStorage.getItem('vidgetnow_history')
     if (savedHistory) setHistory(JSON.parse(savedHistory))
 
-    const savedAccent = localStorage.getItem('vidgrab_accent')
+    const savedAccent = localStorage.getItem('vidgetnow_accent')
     if (savedAccent) {
       setAccentColor(savedAccent)
       document.documentElement.setAttribute('data-theme', savedAccent)
@@ -183,20 +183,20 @@ function App() {
 
   const toggleAccent = (color) => {
     setAccentColor(color)
-    localStorage.setItem('vidgrab_accent', color)
+    localStorage.setItem('vidgetnow_accent', color)
     document.documentElement.setAttribute('data-theme', color)
   }
 
   const clearHistory = () => {
     if (confirm('Are you sure you want to clear your download history?')) {
       setHistory([])
-      localStorage.removeItem('vidgrab_history')
+      localStorage.removeItem('vidgetnow_history')
     }
   }
 
   useEffect(() => {
     if (history.length > 0) {
-      localStorage.setItem('vidgrab_history', JSON.stringify(history))
+      localStorage.setItem('vidgetnow_history', JSON.stringify(history))
     }
   }, [history])
 
@@ -362,7 +362,7 @@ function App() {
               {connectionStatus === 'connected' ? <Wifi size={16} /> : <AlertCircle size={16} />}
               <span>{connectionStatus === 'connected' ? 'Backend Online' : 'Backend Offline'}</span>
             </div>
-            <small className="version-text">v2.1.0 • VidGrab Core</small>
+            <small className="version-text">v2.1.0 • VidGetNow Core</small>
           </div>
 
         </div>
@@ -376,7 +376,7 @@ function App() {
             <Download size={24} color="white" />
           </div>
           <div className="logo-text">
-            <h1>VIDGRAB</h1>
+            <h1>VIDGETNOW</h1>
           </div>
         </div>
 
@@ -438,7 +438,7 @@ function App() {
               <div className="logo-icon" style={{ width: '30px', height: '30px' }}>
                 <Download size={18} color="white" />
               </div>
-              <h2>VIDGRAB</h2>
+              <h2>VIDGETNOW</h2>
             </div>
             <p>The ultimate tool for downloading videos and audio from your favorite social platforms. Fast, free, and secure.</p>
           </div>
@@ -466,13 +466,13 @@ function App() {
             <div className="social-links">
               <a href="#" className="social-icon"><Github size={20} /></a>
               <a href="#" className="social-icon"><Twitter size={20} /></a>
-              <a href="mailto:contact@vidgrab.app" className="social-icon"><Settings size={20} /></a>
+              <a href="mailto:contact@vidgetnow.app" className="social-icon"><Settings size={20} /></a>
             </div>
           </div>
         </div>
 
         <div className="footer-bottom">
-          <p>&copy; {new Date().getFullYear()} VidGrab. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} VidGetNow. All rights reserved.</p>
         </div>
       </footer>
 
