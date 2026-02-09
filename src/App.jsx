@@ -18,6 +18,7 @@ import './App.css'
 import { APP_CONFIG } from './config'
 import HomePage from './pages/HomePage'
 import HistoryPage from './pages/HistoryPage'
+import AboutPage from './pages/AboutPage'
 import { SendIntent } from 'capacitor-plugin-send-intent'
 import { App as CapacitorApp } from '@capacitor/app'
 import { Clipboard as CapacitorClipboard } from '@capacitor/clipboard';
@@ -382,6 +383,7 @@ function App() {
         <nav className="desktop-nav">
           <button className={`nav-link icon-only ${view === 'home' ? 'active-link' : ''}`} onClick={() => setView('home')}>Home</button>
           <button className={`nav-link icon-only ${view === 'history' ? 'active-link' : ''}`} onClick={() => setView('history')}>History</button>
+          <button className={`nav-link icon-only ${view === 'about' ? 'active-link' : ''}`} onClick={() => setView('about')}>About</button>
           <button className="nav-link icon-only" onClick={scrollToFeatures}>Features</button>
           <button className="nav-link icon-only" onClick={() => setShowSettings(true)}>
             <Settings size={20} />
@@ -396,7 +398,7 @@ function App() {
 
       {/* Main Content Area */}
       <main className="main-content">
-        {view === 'home' ? (
+        {view === 'home' && (
           <HomePage
             connectionStatus={connectionStatus}
             activeTab={activeTab}
@@ -416,20 +418,61 @@ function App() {
             status={status}
             featuresRef={featuresRef}
           />
-        ) : (
+        )}
+
+        {view === 'history' && (
           <HistoryPage
             history={history}
             onSelect={handleHistorySelect}
             onClear={clearHistory}
           />
         )}
+
+        {view === 'about' && <AboutPage />}
       </main>
 
-      <footer className="simple-footer">
-        <p>VidGrab &copy; 2026</p>
-        <div className="socials">
-          <Github size={18} />
-          <Twitter size={18} />
+      <footer className="modern-footer">
+        <div className="footer-content">
+          <div className="footer-col footer-brand">
+            <div className="logo-container" style={{ marginBottom: '10px' }}>
+              <div className="logo-icon" style={{ width: '30px', height: '30px' }}>
+                <Download size={18} color="white" />
+              </div>
+              <h2>VIDGRAB</h2>
+            </div>
+            <p>The ultimate tool for downloading videos and audio from your favorite social platforms. Fast, free, and secure.</p>
+          </div>
+
+          <div className="footer-col">
+            <h3>Navigation</h3>
+            <div className="footer-links">
+              <button className="footer-link nav-link icon-only" onClick={() => setView('home')}>Home</button>
+              <button className="footer-link nav-link icon-only" onClick={() => setView('history')}>History</button>
+              <button className="footer-link nav-link icon-only" onClick={() => setView('about')}>About Us</button>
+            </div>
+          </div>
+
+          <div className="footer-col">
+            <h3>Legal</h3>
+            <div className="footer-links">
+              <a href="#" className="footer-link">Privacy Policy</a>
+              <a href="#" className="footer-link">Terms of Service</a>
+              <a href="#" className="footer-link">DMCA</a>
+            </div>
+          </div>
+
+          <div className="footer-col">
+            <h3>Connect</h3>
+            <div className="social-links">
+              <a href="#" className="social-icon"><Github size={20} /></a>
+              <a href="#" className="social-icon"><Twitter size={20} /></a>
+              <a href="mailto:contact@vidgrab.app" className="social-icon"><Settings size={20} /></a>
+            </div>
+          </div>
+        </div>
+
+        <div className="footer-bottom">
+          <p>&copy; {new Date().getFullYear()} VidGrab. All rights reserved.</p>
         </div>
       </footer>
 
