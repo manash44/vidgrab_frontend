@@ -325,7 +325,7 @@ function App() {
           </div>
 
           <div className="version-tag" style={{ textAlign:'left', padding:0 }}>
-            VidGetNow v2.1.0 • Render Backend
+            VidGetNow Premium v2.2.0 • Render Backend
           </div>
         </div>
       </div>

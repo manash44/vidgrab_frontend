@@ -176,32 +176,44 @@ const HomePage = ({
       {/* Feature cards */}
       <div className="features-section" ref={featuresRef}>
         <div className="section-label">Why VidGetNow?</div>
-        <div className="feat-row">
-          <div className="feat-card">
-            <div className="feat-icon"><Zap size={18}/></div>
+        
+        <div className="feat-card">
+          <div className="feat-icon"><Zap size={22} strokeWidth={2.5}/></div>
+          <div className="feat-content">
             <h4>Turbo Speed</h4>
-            <p>Parallel chunk downloads for max bandwidth.</p>
-          </div>
-          <div className="feat-card">
-            <div className="feat-icon"><Shield size={18}/></div>
-            <h4>No Logs</h4>
-            <p>Zero tracking. Your downloads stay private.</p>
+            <p>Parallel chunk downloads for max bandwidth and zero wait time.</p>
           </div>
         </div>
-        <div className="feat-row">
-          <div className="feat-card">
-            <div className="feat-icon"><Globe size={18}/></div>
+
+        <div className="feat-card">
+          <div className="feat-icon"><Shield size={22} strokeWidth={2.5}/></div>
+          <div className="feat-content">
+            <h4>Privacy First</h4>
+            <p>Zero tracking, no logs. Your downloads are strictly your business.</p>
+          </div>
+        </div>
+
+        <div className="feat-card">
+          <div className="feat-icon"><Globe size={22} strokeWidth={2.5}/></div>
+          <div className="feat-content">
             <h4>1000+ Sites</h4>
-            <p>YouTube, Instagram, TikTok, Reddit & more.</p>
-          </div>
-          <div className="feat-card">
-            <div className="feat-icon"><Headphones size={18}/></div>
-            <h4>MP3 Extract</h4>
-            <p>Convert any video to high-quality MP3 audio.</p>
+            <p>YouTube, Instagram, TikTok, Reddit, and almost any video source.</p>
           </div>
         </div>
-        <div className="version-tag">VidGetNow v2.1.0</div>
+
+        <div className="feat-card">
+          <div className="feat-icon"><Headphones size={22} strokeWidth={2.5}/></div>
+          <div className="feat-content">
+            <h4>MP3 Engine</h4>
+            <p>Extract crystal clear audio from any video in one single tap.</p>
+          </div>
+        </div>
       </div>
+      
+      <div className="version-tag" style={{ marginTop: -20, marginBottom: 40 }}>
+        VidGetNow Premium v2.2.0 • Powered by Render
+      </div>
+
     </div>
   )
 }
