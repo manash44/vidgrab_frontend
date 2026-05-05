@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://vidgetnow.app/sitemap.xml
