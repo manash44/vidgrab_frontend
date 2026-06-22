@@ -6,6 +6,21 @@
   command = "vite"
   port = 3000
 
+# ── Backend API Proxy ──────────────────────────────────────────────────────────
+# Forwards all /api/* calls to the Render backend, stripping the /api prefix.
+# This avoids CORS issues and makes the backend URL configurable in one place.
+# To change the backend: update the `to` URL below (or set RENDER_BACKEND_URL
+# as a Netlify environment variable and reference it here).
+[[redirects]]
+  from   = "/api/*"
+  to     = "https://backend-iu1e.onrender.com/:splat"
+  status = 200
+  force  = true
+
+  [redirects.headers]
+    X-Forwarded-Host = "vidgetnow.netlify.app"
+
+# ── SPA catch-all (must be LAST) ───────────────────────────────────────────────
 [[redirects]]
   from = "/*"
   to = "/index.html"

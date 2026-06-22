@@ -1,0 +1,60 @@
+/* Sidebar component styling – glassmorphic, premium look */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 80px;
+  background: rgba(20, 20, 20, 0.6);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: var(--safe-top);
+  z-index: 1000;
+}
+
+.sidebar-item {
+  width: 60px;
+  height: 60px;
+  margin: 12px 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sidebar-item:hover {
+  background: var(--bg-elevated);
+  border-color: var(--accent);
+  color: var(--text);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.sidebar-item.active {
+  background: var(--accent-gradient);
+  color: #000;
+  border-color: var(--accent);
+}
+
+.sidebar-label {
+  font-size: 0.65rem;
+  margin-top: 4px;
+  color: var(--text-dim);
+}
+
+/* Hide label for compact mobile view – will be overridden by media query */
+@media (max-width: 767px) {
+  .sidebar {
+    display: none;
+  }
+}

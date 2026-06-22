@@ -14,6 +14,14 @@ export default defineConfig({
     // Allow access from other devices on the network
     host: '0.0.0.0',
     port: 5173,
+    proxy: {
+      // During local dev: forward /api/* → local Flask backend on :5000
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api/, ''),
+      },
+    },
   },
   build: {
     // Output to dist folder

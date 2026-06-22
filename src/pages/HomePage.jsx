@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 
 const PLATFORMS = [
-  { name: 'All',       color: '#ffd700', dot: '#ffd700' },
+  { name: 'All',       color: '#FF3B5C', dot: '#FF3B5C' },
   { name: 'YouTube',   color: '#ff0000', dot: '#ff0000' },
   { name: 'Instagram', color: '#e1306c', dot: '#e1306c' },
   { name: 'Twitter/X', color: '#1d9bf0', dot: '#1d9bf0' },
@@ -18,11 +18,11 @@ const PLATFORMS = [
 const HomePage = ({
   connectionStatus,
   activeTab, setActiveTab,
-  url, setUrl,
+  urls, setUrls,
   loading, inputRef,
   handleDownload, handlePaste, handleSaveFile,
   quality, setQuality,
-  status, featuresRef
+  tasks, clearTasks
 }) => {
   const [activePlatform, setActivePlatform] = React.useState('All')
 
@@ -76,22 +76,34 @@ const HomePage = ({
 
         {/* URL input */}
         <form onSubmit={handleDownload}>
-          <div className="search-box">
-            <input
+          <div className="search-box" style={{ alignItems: 'flex-start', padding: '16px' }}>
+            <textarea
               ref={inputRef}
-              type="url"
-              placeholder="Paste video link here…"
-              value={url}
-              onChange={e => setUrl(e.target.value)}
+              placeholder="Paste one or multiple video links here (one per line)…"
+              value={urls}
+              onChange={e => setUrls(e.target.value)}
               disabled={loading}
               autoComplete="off"
+              rows={3}
+              style={{
+                width: '100%',
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                color: 'var(--text)',
+                fontSize: '1.05rem',
+                resize: 'vertical',
+                minHeight: '80px',
+                fontFamily: 'inherit',
+                lineHeight: '1.5'
+              }}
             />
-            {url && (
-              <button type="button" className="clear-btn" onClick={() => setUrl('')}>
+            {urls && (
+              <button type="button" className="clear-btn" onClick={() => setUrls('')} style={{ alignSelf: 'flex-start' }}>
                 <X size={16} />
               </button>
             )}
-            <button type="button" className="paste-chip" onClick={handlePaste}>
+            <button type="button" className="paste-chip" onClick={handlePaste} style={{ alignSelf: 'flex-start', marginTop: '4px' }}>
               <Clipboard size={12} style={{marginRight:4,verticalAlign:'middle'}}/>Paste
             </button>
           </div>
@@ -101,14 +113,14 @@ const HomePage = ({
             <div className="quality-row">
               <span>Quality:</span>
               <div className="q-chips">
-                {['best','1080','720','480','360'].map(q => (
+                {['1080','720','480','360'].map(q => (
                   <button
                     key={q}
                     type="button"
                     className={`q-chip ${quality === q ? 'sel' : ''}`}
                     onClick={() => setQuality(q)}
                   >
-                    {q === 'best' ? 'Max' : q + 'p'}
+                    {q}p
                   </button>
                 ))}
               </div>
@@ -116,102 +128,83 @@ const HomePage = ({
           )}
 
           {/* Main action button */}
-          {(!status || status.status !== 'ready') ? (
-            <button
-              type="submit"
-              className={`dl-btn ${loading ? 'processing' : ''}`}
-              disabled={!url || loading}
-            >
-              {loading
-                ? <><span className="spin"><Loader2 size={18}/></span> Processing…</>
-                : <><Download size={18}/> {activeTab === 'audio' ? 'Convert to MP3' : 'Download Video'}</>
-              }
-            </button>
-          ) : (
-            <button type="button" className="dl-btn done" onClick={handleSaveFile}>
-              <CheckCircle size={18}/>
-              {status.message?.includes('Started') ? `Downloading… ${status.fileSize || ''}` : 'Tap to Save File'}
-            </button>
-          )}
+          <button
+            type="submit"
+            className={`dl-btn ${loading ? 'processing' : ''}`}
+            disabled={!urls || loading}
+          >
+            {loading
+              ? <><span className="spin"><Loader2 size={18}/></span> Submitting tasks…</>
+              : <><Download size={18}/> {activeTab === 'audio' ? 'Convert to MP3' : 'Download Video'}</>
+            }
+          </button>
         </form>
       </div>
 
-      {/* Status card */}
-      {status && (
-        <div className="status-card fade-up">
-          <div className="status-top">
-            <span className={`status-label ${status.status === 'error' ? 'err' : status.status === 'ready' ? 'ok' : ''}`}>
-              {status.status === 'downloading' && 'Downloading…'}
-              {status.status === 'queued'      && 'Queued…'}
-              {status.status === 'error'       && '✕ Failed'}
-              {status.status === 'ready'       && '✓ Complete'}
-            </span>
-            {status.status === 'downloading' && (
-              <span className="status-pct">{Math.round(status.progress || 0)}%</span>
-            )}
+      {/* Status cards for multiple downloads */}
+      {tasks && Object.keys(tasks).length > 0 && (
+        <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <h3 style={{ fontSize: '1rem', color: 'var(--text-dim)' }}>Downloads ({Object.keys(tasks).length})</h3>
+            <button type="button" onClick={clearTasks} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.85rem' }}>Clear All</button>
           </div>
+          
+          {Object.entries(tasks).map(([tid, st]) => (
+            <div key={tid} className="status-card fade-up">
+              <div className="status-top">
+                <span className="status-url" style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.85rem', color: 'var(--text-dim)', marginRight: '12px' }}>
+                  {st.url}
+                </span>
+                <span className={`status-label ${st.status === 'error' ? 'err' : st.status === 'ready' ? 'ok' : ''}`} style={{ flexShrink: 0 }}>
+                  {st.status === 'downloading' && 'Downloading…'}
+                  {st.status === 'queued'      && 'Queued…'}
+                  {st.status === 'error'       && '✕ Failed'}
+                  {st.status === 'ready'       && '✓ Complete'}
+                </span>
+                {st.status === 'downloading' && (
+                  <span className="status-pct" style={{ flexShrink: 0, marginLeft: '8px' }}>{Math.round(st.progress || 0)}%</span>
+                )}
+              </div>
 
-          {status.status === 'downloading' && (
-            <div className="prog-track">
-              <div className="prog-fill" style={{ width:`${status.progress || 0}%` }} />
+              {st.status === 'downloading' && (
+                <div className="prog-track">
+                  <div className="prog-fill" style={{ width:`${st.progress || 0}%` }} />
+                </div>
+              )}
+
+              {st.message && (
+                <p className="status-msg">
+                  {st.message === 'Processing conversion...' ? 'Finalizing file…' : st.message}
+                </p>
+              )}
+
+              {(st.speed || st.eta) && st.status === 'downloading' && (
+                <div className="status-speed-row">
+                  {st.speed && <span>⬇ {st.speed}</span>}
+                  {st.eta   && <span>⏱ {st.eta}</span>}
+                  {(st.size || st.file_size_str) && <span>📦 {st.size || st.file_size_str}</span>}
+                </div>
+              )}
+              
+              {st.status === 'ready' && (
+                <button 
+                  type="button" 
+                  className="dl-btn done" 
+                  onClick={() => handleSaveFile(tid)}
+                  style={{ marginTop: '12px', padding: '8px', fontSize: '0.9rem' }}
+                >
+                  <CheckCircle size={16}/> Tap to Save File
+                </button>
+              )}
             </div>
-          )}
-
-          {status.message && (
-            <p className="status-msg">
-              {status.message === 'Processing conversion...' ? 'Finalizing file…' : status.message}
-            </p>
-          )}
-
-          {(status.speed || status.eta) && status.status === 'downloading' && (
-            <div className="status-speed-row">
-              {status.speed && <span>⬇ {status.speed}</span>}
-              {status.eta   && <span>⏱ {status.eta}</span>}
-              {(status.size || status.file_size_str) && <span>📦 {status.size || status.file_size_str}</span>}
-            </div>
-          )}
+          ))}
         </div>
       )}
 
-      {/* Feature cards */}
-      <div className="features-section" ref={featuresRef}>
-        <div className="section-label">Why VidGetNow?</div>
-        
-        <div className="feat-card">
-          <div className="feat-icon"><Zap size={22} strokeWidth={2.5}/></div>
-          <div className="feat-content">
-            <h4>Turbo Speed</h4>
-            <p>Parallel chunk downloads for max bandwidth and zero wait time.</p>
-          </div>
-        </div>
-
-        <div className="feat-card">
-          <div className="feat-icon"><Shield size={22} strokeWidth={2.5}/></div>
-          <div className="feat-content">
-            <h4>Privacy First</h4>
-            <p>Zero tracking, no logs. Your downloads are strictly your business.</p>
-          </div>
-        </div>
-
-        <div className="feat-card">
-          <div className="feat-icon"><Globe size={22} strokeWidth={2.5}/></div>
-          <div className="feat-content">
-            <h4>1000+ Sites</h4>
-            <p>YouTube, Instagram, TikTok, Reddit, and almost any video source.</p>
-          </div>
-        </div>
-
-        <div className="feat-card">
-          <div className="feat-icon"><Headphones size={22} strokeWidth={2.5}/></div>
-          <div className="feat-content">
-            <h4>MP3 Engine</h4>
-            <p>Extract crystal clear audio from any video in one single tap.</p>
-          </div>
-        </div>
-      </div>
       
-      <div className="version-tag" style={{ marginTop: -20, marginBottom: 40 }}>
-        VidGetNow Premium v2.2.0 • Powered by Render
+      <div className="version-tag" style={{ marginTop: 40, marginBottom: 40, textAlign: 'center', width: '100%', display: 'block' }}>
+        VidGetNow Premium v2.2.0 • Powered by Render<br/>
+        © manshdevproductions.com
       </div>
 
     </div>
