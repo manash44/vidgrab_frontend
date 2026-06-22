@@ -168,18 +168,36 @@ function App() {
             changed = true
           }
           
-          if (data.status === 'ready' && tasks[tid]?.status !== 'ready') {
-            addToHistory(newTasks[tid].url, data.filename || 'Download', new Date().toLocaleString())
-            if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
-              try { new Notification('Download Ready!', { body: data.filename }) } catch {}
+            if (data.status === 'ready' && tasks[tid]?.status !== 'ready') {
+              addToHistory(newTasks[tid].url, data.filename || 'Download', new Date().toLocaleString())
+              if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+                try { new Notification('Download Ready!', { body: data.filename }) } catch {}
+              }
+              handleAutoDownload(tid, data.filename, data.file_size_str || data.size)
+              
+              // Automatically remove task from UI after 4 seconds to prevent long list
+              setTimeout(() => {
+                setTasks(prev => {
+                  const updated = { ...prev };
+                  delete updated[tid];
+                  return updated;
+                });
+                setUrls(''); // Clear the input field for the next link
+              }, 4000);
             }
-            handleAutoDownload(tid, data.filename, data.file_size_str || data.size)
-          }
-        } catch (err) {
-          if (err.response?.status === 404) {
-            newTasks[tid] = { ...newTasks[tid], status: 'error', message: 'Session lost. Please try again.' }
-            changed = true
-          }
+          } catch (err) {
+            if (err.response?.status === 404) {
+              newTasks[tid] = { ...newTasks[tid], status: 'error', message: 'Session lost. Please try again.' }
+              changed = true
+              
+              setTimeout(() => {
+                setTasks(prev => {
+                  const updated = { ...prev };
+                  delete updated[tid];
+                  return updated;
+                });
+              }, 4000);
+            }
         }
       }
       if (changed) setTasks(newTasks)
@@ -189,14 +207,22 @@ function App() {
   }, [tasks, notificationsEnabled, addToHistory, handleAutoDownload, apiUrl])
 
   // ── Actions ─────────────────────────────────────
-  const handleDownload = async (e) => {
-    e.preventDefault()
-    if (!urls.trim()) return
-    const links = urls.split('\n').map(l => l.trim()).filter(Boolean)
+  const handleDownload = async (e, overrideUrls = null) => {
+    if (e) e.preventDefault()
+    const textToDownload = overrideUrls !== null ? overrideUrls : urls
+    if (!textToDownload || !textToDownload.trim()) return
+    const links = textToDownload.split('\n').map(l => l.trim()).filter(Boolean)
     if (links.length === 0) return
     
     setLoading(true)
-    let newTasks = { ...tasks }
+    
+    // Clear previously finished/errored tasks to keep the list clean
+    let newTasks = {}
+    Object.keys(tasks).forEach(tid => {
+       if (tasks[tid].status === 'downloading' || tasks[tid].status === 'queued') {
+           newTasks[tid] = tasks[tid]
+       }
+    })
     
     const promises = links.map(async (link) => {
       const downloadUrl = normalizeUrl(link)
@@ -225,8 +251,9 @@ function App() {
   const handlePaste = async () => {
     try {
       const text = await navigator.clipboard.readText()
-      setUrls(prev => prev ? prev + '\n' + text : text)
+      setUrls(text) // Replace instead of append for clean single downloads
       inputRef.current?.focus()
+      handleDownload(null, text) // Auto start downloading
     } catch {}
   }
 

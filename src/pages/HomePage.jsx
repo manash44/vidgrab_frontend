@@ -82,6 +82,12 @@ const HomePage = ({
               placeholder="Paste one or multiple video links here (one per line)…"
               value={urls}
               onChange={e => setUrls(e.target.value)}
+              onPaste={e => {
+                const text = e.clipboardData.getData('text');
+                if (text && text.trim().startsWith('http')) {
+                  handleDownload(null, text);
+                }
+              }}
               disabled={loading}
               autoComplete="off"
               rows={3}
@@ -139,67 +145,67 @@ const HomePage = ({
             }
           </button>
         </form>
-      </div>
 
-      {/* Status cards for multiple downloads */}
-      {tasks && Object.keys(tasks).length > 0 && (
-        <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <h3 style={{ fontSize: '1rem', color: 'var(--text-dim)' }}>Downloads ({Object.keys(tasks).length})</h3>
-            <button type="button" onClick={clearTasks} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.85rem' }}>Clear All</button>
-          </div>
-          
-          {Object.entries(tasks).map(([tid, st]) => (
-            <div key={tid} className="status-card fade-up">
-              <div className="status-top">
-                <span className="status-url" style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.85rem', color: 'var(--text-dim)', marginRight: '12px' }}>
-                  {st.url}
-                </span>
-                <span className={`status-label ${st.status === 'error' ? 'err' : st.status === 'ready' ? 'ok' : ''}`} style={{ flexShrink: 0 }}>
-                  {st.status === 'downloading' && 'Downloading…'}
-                  {st.status === 'queued'      && 'Queued…'}
-                  {st.status === 'error'       && '✕ Failed'}
-                  {st.status === 'ready'       && '✓ Complete'}
-                </span>
+        {/* Status cards for single download focus */}
+        {tasks && Object.keys(tasks).length > 0 && (
+          <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <h3 style={{ fontSize: '1rem', color: 'var(--text-dim)', fontWeight: '700' }}>Current Download</h3>
+              <button type="button" onClick={clearTasks} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600' }}>Clear</button>
+            </div>
+            
+            {Object.entries(tasks).map(([tid, st]) => (
+              <div key={tid} className="status-card fade-up" style={{ margin: 0, width: '100%' }}>
+                <div className="status-top">
+                  <span className="status-url" style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.85rem', color: 'var(--text-dim)', marginRight: '12px' }}>
+                    {st.url}
+                  </span>
+                  <span className={`status-label ${st.status === 'error' ? 'err' : st.status === 'ready' ? 'ok' : ''}`} style={{ flexShrink: 0 }}>
+                    {st.status === 'downloading' && 'Downloading…'}
+                    {st.status === 'queued'      && 'Queued…'}
+                    {st.status === 'error'       && '✕ Failed'}
+                    {st.status === 'ready'       && '✓ Complete'}
+                  </span>
+                  {st.status === 'downloading' && (
+                    <span className="status-pct" style={{ flexShrink: 0, marginLeft: '8px' }}>{Math.round(st.progress || 0)}%</span>
+                  )}
+                </div>
+
                 {st.status === 'downloading' && (
-                  <span className="status-pct" style={{ flexShrink: 0, marginLeft: '8px' }}>{Math.round(st.progress || 0)}%</span>
+                  <div className="prog-track">
+                    <div className="prog-fill" style={{ width:`${st.progress || 0}%` }} />
+                  </div>
+                )}
+
+                {st.message && (
+                  <p className="status-msg">
+                    {st.message === 'Processing conversion...' ? 'Finalizing file…' : st.message}
+                  </p>
+                )}
+
+                {(st.speed || st.eta) && st.status === 'downloading' && (
+                  <div className="status-speed-row">
+                    {st.speed && <span>⬇ {st.speed}</span>}
+                    {st.eta   && <span>⏱ {st.eta}</span>}
+                    {(st.size || st.file_size_str) && <span>📦 {st.size || st.file_size_str}</span>}
+                  </div>
+                )}
+                
+                {st.status === 'ready' && (
+                  <button 
+                    type="button" 
+                    className="dl-btn done" 
+                    onClick={() => handleSaveFile(tid)}
+                    style={{ marginTop: '12px', padding: '12px', fontSize: '0.95rem', borderRadius: '16px' }}
+                  >
+                    <CheckCircle size={16}/> Tap to Save File
+                  </button>
                 )}
               </div>
-
-              {st.status === 'downloading' && (
-                <div className="prog-track">
-                  <div className="prog-fill" style={{ width:`${st.progress || 0}%` }} />
-                </div>
-              )}
-
-              {st.message && (
-                <p className="status-msg">
-                  {st.message === 'Processing conversion...' ? 'Finalizing file…' : st.message}
-                </p>
-              )}
-
-              {(st.speed || st.eta) && st.status === 'downloading' && (
-                <div className="status-speed-row">
-                  {st.speed && <span>⬇ {st.speed}</span>}
-                  {st.eta   && <span>⏱ {st.eta}</span>}
-                  {(st.size || st.file_size_str) && <span>📦 {st.size || st.file_size_str}</span>}
-                </div>
-              )}
-              
-              {st.status === 'ready' && (
-                <button 
-                  type="button" 
-                  className="dl-btn done" 
-                  onClick={() => handleSaveFile(tid)}
-                  style={{ marginTop: '12px', padding: '8px', fontSize: '0.9rem' }}
-                >
-                  <CheckCircle size={16}/> Tap to Save File
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
       
       <div className="version-tag" style={{ marginTop: 40, marginBottom: 40, textAlign: 'center', width: '100%', display: 'block' }}>
