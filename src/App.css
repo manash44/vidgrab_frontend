@@ -66,11 +66,19 @@
 
 html, body {
   height: 100%;
+  width: 100%;
   background: var(--bg);
   color: var(--text);
   font-family: 'Outfit', sans-serif;
-  overflow-x: hidden;
+  overflow: hidden; /* Prevent overscroll to feel native */
   -webkit-tap-highlight-color: transparent;
+  user-select: none; /* Prevent text selection by default */
+  touch-action: pan-x pan-y;
+}
+
+/* Allow text selection in specific areas */
+input, textarea, p, h1, h2, h3, h4, span {
+  user-select: text;
 }
 
 /* ── ANIMATED BACKGROUND ── */
@@ -118,10 +126,12 @@ html, body {
 }
 
 .app-container {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height */
   display: flex;
   background: transparent;
   position: relative;
+  overflow: hidden;
 }
 
 /* Content area takes remaining space */
@@ -129,6 +139,8 @@ html, body {
   flex: 1;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* ── TOP BAR (GLASSMORHISM) ── */
@@ -266,8 +278,11 @@ html, body {
 /* ── MAIN CONTENT ── */
 .main-scroll {
   flex: 1;
-  padding-top: 80px;
-  padding-bottom: calc(80px + var(--safe-bottom));
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* Smooth iOS scroll */
+  padding-top: calc(70px + var(--safe-top));
+  padding-bottom: calc(85px + var(--safe-bottom));
 }
 
 /* ── PLATFORM CHIPS ── */
@@ -630,19 +645,17 @@ html, body {
 /* ── BOTTOM NAV ── */
 .bottom-nav {
   position: fixed;
-  bottom: 30px; left: 20px; right: 20px;
-  height: 80px;
-  background: rgba(16, 16, 18, 0.65);
+  bottom: 0; left: 0; right: 0;
+  height: calc(65px + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: rgba(16, 16, 18, 0.85);
   backdrop-filter: blur(35px) saturate(150%);
   -webkit-backdrop-filter: blur(35px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 40px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   z-index: 1000;
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.08);
-  max-width: 420px;
-  margin: 0 auto;
+  box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
 }
 
 .nav-tab {
@@ -935,7 +948,6 @@ html, body {
   .search-hero-title { font-size: 1.8rem; }
   .top-bar { padding: 0 16px; }
   .search-hero { padding: 12px 16px 24px; }
-  .bottom-nav { bottom: 16px; left: 16px; right: 16px; height: 70px; }
 }
 
 /* ── DESKTOP NAV ── */
