@@ -565,7 +565,7 @@ input, textarea, p, h1, h2, h3, h4, span {
   box-shadow: 0 0 15px var(--accent-glow);
 }
 
-.status-msg { font-size: 0.9rem; color: var(--text-dim); font-weight: 500; }
+.status-msg { font-size: 0.9rem; color: var(--text-dim); font-weight: 500; word-break: break-word; }
 
 .status-speed-row {
   display: flex;

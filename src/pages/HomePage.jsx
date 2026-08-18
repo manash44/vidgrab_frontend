@@ -227,7 +227,7 @@ const HomePage = ({
 
       
       <div className="version-tag" style={{ marginTop: 40, marginBottom: 40, textAlign: 'center', width: '100%', display: 'block' }}>
-        VidGetNow Premium v2.2.0 • Powered by Render<br/>
+        VidGetNow Premium v2.2.1 • Powered by Render<br/>
         © manshdevproductions.com
       </div>
 
