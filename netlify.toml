@@ -13,7 +13,7 @@
 # as a Netlify environment variable and reference it here).
 [[redirects]]
   from   = "/api/*"
-  to     = "https://backend-iu1e.onrender.com/:splat"
+  to     = "https://backend-iti7.onrender.com/:splat"
   status = 200
   force  = true
 
