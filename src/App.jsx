@@ -247,7 +247,8 @@ function App() {
     const promises = links.map(async (link) => {
       const downloadUrl = normalizeUrl(link)
       try {
-        const browserToSend = browserCookie === 'auto' ? detectBrowser() : browserCookie
+        const isYouTube = /youtube\.com|youtu\.be/i.test(downloadUrl)
+        const browserToSend = isYouTube ? (browserCookie === 'auto' ? detectBrowser() : browserCookie) : 'none'
         const res = await axios.post(apiUrl('/download'), {
           url: downloadUrl, format: activeTab, quality: activeTab === 'audio' ? 'best' : quality, browserCookie: browserToSend
         }, { timeout: 60000 })
