@@ -18,8 +18,10 @@ import { Clipboard as CapacitorClipboard } from '@capacitor/clipboard'
 function App() {
   const [view,       setView]       = useState('home')
   const [activeTab,  setActiveTab]  = useState('video')
+  const [downloadMode, setDownloadMode] = useState('single')
   const [urls,       setUrls]       = useState('')
   const [quality,    setQuality]    = useState('1080')
+  const [browserCookie, setBrowserCookie] = useState('auto')
   const [loading,    setLoading]    = useState(false)
   const [tasks,      setTasks]      = useState({})
   const [history,    setHistory]    = useState([])
@@ -42,6 +44,18 @@ function App() {
     if (!trimmed) return ''
     return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
   }, [])
+
+  const detectBrowser = () => {
+    const ua = navigator.userAgent
+    if (navigator.brave && navigator.brave.isBrave) return 'brave'
+    if (ua.indexOf('Edg/') > -1) return 'edge'
+    if (ua.indexOf('OPR/') > -1 || ua.indexOf('Opera/') > -1) return 'opera'
+    if (ua.indexOf('Vivaldi') > -1) return 'vivaldi'
+    if (ua.indexOf('Chrome') > -1) return 'chrome'
+    if (ua.indexOf('Firefox') > -1) return 'firefox'
+    if (ua.indexOf('Safari') > -1 && ua.indexOf('Chrome') === -1) return 'safari'
+    return 'none'
+  }
 
   // ── Helpers ─────────────────────────────────────
   const addToHistory = useCallback((link, filename, date) => {
@@ -121,11 +135,17 @@ function App() {
     document.documentElement.setAttribute('data-theme', t)
     const q = localStorage.getItem('vgn_quality') || '1080'
     setQuality(q)
+    const b = localStorage.getItem('vgn_browser_cookie') || 'auto'
+    setBrowserCookie(b)
   }
 
   useEffect(() => {
     localStorage.setItem('vgn_quality', quality)
   }, [quality])
+
+  useEffect(() => {
+    localStorage.setItem('vgn_browser_cookie', browserCookie)
+  }, [browserCookie])
 
   function toggleTheme() {
     const newTheme = theme === 'dark' ? 'light' : 'dark'
@@ -227,8 +247,9 @@ function App() {
     const promises = links.map(async (link) => {
       const downloadUrl = normalizeUrl(link)
       try {
+        const browserToSend = browserCookie === 'auto' ? detectBrowser() : browserCookie
         const res = await axios.post(apiUrl('/download'), {
-          url: downloadUrl, format: activeTab, quality: activeTab === 'audio' ? 'best' : quality
+          url: downloadUrl, format: activeTab, quality: activeTab === 'audio' ? 'best' : quality, browserCookie: browserToSend
         }, { timeout: 60000 })
         const tid = res.data.task_id
         newTasks[tid] = { status: 'queued', message: 'Starting download...', url: downloadUrl }
@@ -251,9 +272,19 @@ function App() {
   const handlePaste = async () => {
     try {
       const text = await navigator.clipboard.readText()
-      setUrls(text) // Replace instead of append for clean single downloads
-      inputRef.current?.focus()
-      handleDownload(null, text) // Auto start downloading
+      if (text && text.trim().startsWith('http')) {
+        if (downloadMode === 'single') {
+          setUrls(text.trim())
+          inputRef.current?.focus()
+          handleDownload(null, text.trim())
+        } else {
+          setUrls(prev => {
+            const current = prev.trim()
+            return current ? current + '\n' + text.trim() : text.trim()
+          })
+          inputRef.current?.focus()
+        }
+      }
     } catch {}
   }
 
@@ -300,6 +331,7 @@ function App() {
               <HomePage
                 connectionStatus={connectionStatus}
                 activeTab={activeTab} setActiveTab={setActiveTab}
+                downloadMode={downloadMode} setDownloadMode={setDownloadMode}
                 urls={urls} setUrls={setUrls}
                 loading={loading} inputRef={inputRef}
                 handleDownload={handleDownload}
@@ -317,6 +349,7 @@ function App() {
               <SettingsPage 
                 theme={theme} toggleTheme={toggleTheme}
                 quality={quality} setQuality={setQuality}
+                browserCookie={browserCookie} setBrowserCookie={setBrowserCookie}
                 notificationsEnabled={notificationsEnabled} setNotificationsEnabled={setNotificationsEnabled}
                 clearHistory={clearHistory}
                 connectionStatus={connectionStatus} checkConnection={checkConnection}

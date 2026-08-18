@@ -4,6 +4,7 @@ import { Sun, Moon, Trash2, Wifi, Settings, Bell, Zap } from 'lucide-react'
 const SettingsPage = ({
   theme, toggleTheme,
   quality, setQuality,
+  browserCookie, setBrowserCookie,
   notificationsEnabled, setNotificationsEnabled,
   clearHistory,
   connectionStatus, checkConnection
@@ -69,6 +70,38 @@ const SettingsPage = ({
               </button>
             ))}
           </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '20px', borderBottom: '1px solid var(--border)', marginBottom: '20px' }}>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '1rem' }}>Extract Browser Cookies</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Use local browser cookies to bypass blocks (e.g. YouTube).</div>
+          </div>
+          
+          <select 
+            value={browserCookie} 
+            onChange={(e) => setBrowserCookie(e.target.value)}
+            style={{ 
+              background: 'var(--bg-elevated)', 
+              color: 'var(--text)',
+              border: '1px solid var(--border)', 
+              borderRadius: '12px', 
+              padding: '8px 12px',
+              outline: 'none',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            <option value="auto">Auto Detect (Current)</option>
+            <option value="none">None</option>
+            <option value="chrome">Chrome</option>
+            <option value="firefox">Firefox</option>
+            <option value="edge">Edge</option>
+            <option value="safari">Safari</option>
+            <option value="brave">Brave</option>
+            <option value="opera">Opera</option>
+            <option value="vivaldi">Vivaldi</option>
+          </select>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

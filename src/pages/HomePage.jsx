@@ -18,6 +18,7 @@ const PLATFORMS = [
 const HomePage = ({
   connectionStatus,
   activeTab, setActiveTab,
+  downloadMode, setDownloadMode,
   urls, setUrls,
   loading, inputRef,
   handleDownload, handlePaste, handleSaveFile,
@@ -74,19 +75,36 @@ const HomePage = ({
           </button>
         </div>
 
+        {/* Mode toggle */}
+        <div className="fmt-toggle" style={{ marginTop: '12px', marginBottom: '12px' }}>
+          <button
+            type="button"
+            className={`fmt-btn ${downloadMode === 'single' ? 'active' : ''}`}
+            onClick={() => { setDownloadMode('single'); setUrls(''); }}
+            style={{ fontSize: '0.85rem', padding: '6px 12px' }}
+          >
+            Single Link
+          </button>
+          <button
+            type="button"
+            className={`fmt-btn ${downloadMode === 'multiple' ? 'active' : ''}`}
+            onClick={() => setDownloadMode('multiple')}
+            style={{ fontSize: '0.85rem', padding: '6px 12px' }}
+          >
+            Batch Mode
+          </button>
+        </div>
+
         {/* URL input */}
         <form onSubmit={handleDownload}>
           <div className="search-box" style={{ alignItems: 'flex-start', padding: '16px' }}>
             <textarea
               ref={inputRef}
-              placeholder="Paste one or multiple video links here (one per line)…"
+              placeholder={downloadMode === 'single' ? "Paste a single video link here..." : "Paste multiple video links here (one per line)…"}
               value={urls}
               onChange={e => setUrls(e.target.value)}
               onPaste={e => {
-                const text = e.clipboardData.getData('text');
-                if (text && text.trim().startsWith('http')) {
-                  handleDownload(null, text);
-                }
+                // Let native paste happen, don't auto-submit
               }}
               disabled={loading}
               autoComplete="off"
