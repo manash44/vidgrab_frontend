@@ -80,15 +80,16 @@ function App() {
 
   // ── Capacitor ───────────────────────────────────
   async function checkClipboard() {
+    const hasUrl = (str) => /^https?:\/\//i.test(str) || /^www\./i.test(str) || /[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/.test(str);
     try {
       const { value } = await CapacitorClipboard.read()
-      if (value?.startsWith('http') || value?.startsWith('www')) {
+      if (value && hasUrl(value.trim())) {
         setUrls(value)
       }
     } catch {
       try {
         const text = await navigator.clipboard.readText()
-        if (text?.startsWith('http') || text?.startsWith('www')) {
+        if (text && hasUrl(text.trim())) {
           setUrls(text)
         }
       } catch {}
@@ -231,7 +232,16 @@ function App() {
     if (e) e.preventDefault()
     const textToDownload = overrideUrls !== null ? overrideUrls : urls
     if (!textToDownload || !textToDownload.trim()) return
-    const links = textToDownload.split('\n').map(l => l.trim()).filter(Boolean)
+    
+    // Extract potential links from text (by lines or whitespace)
+    const rawTokens = textToDownload.split(/[\n\s]+/).map(l => l.trim()).filter(Boolean)
+    // Filter tokens that look like URLs
+    const links = rawTokens.filter(p => 
+      /^https?:\/\//i.test(p) || 
+      /^www\./i.test(p) || 
+      /^[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/.*)?$/.test(p)
+    )
+    
     if (links.length === 0) return
     
     setLoading(true)
@@ -273,17 +283,23 @@ function App() {
   const handlePaste = async () => {
     try {
       const text = await navigator.clipboard.readText()
-      if (text && text.trim().startsWith('http')) {
-        if (downloadMode === 'single') {
-          setUrls(text.trim())
-          inputRef.current?.focus()
-          handleDownload(null, text.trim())
-        } else {
-          setUrls(prev => {
-            const current = prev.trim()
-            return current ? current + '\n' + text.trim() : text.trim()
-          })
-          inputRef.current?.focus()
+      if (text && text.trim()) {
+        const trimmedText = text.trim();
+        // Check if there's at least one potential URL in the pasted text
+        const hasUrl = /^https?:\/\//i.test(trimmedText) || /^www\./i.test(trimmedText) || /[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/.test(trimmedText);
+        
+        if (hasUrl) {
+          if (downloadMode === 'single') {
+            setUrls(trimmedText)
+            inputRef.current?.focus()
+            handleDownload(null, trimmedText)
+          } else {
+            setUrls(prev => {
+              const current = prev.trim()
+              return current ? current + '\n' + trimmedText : trimmedText
+            })
+            inputRef.current?.focus()
+          }
         }
       }
     } catch {}

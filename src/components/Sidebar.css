@@ -1,58 +1,83 @@
-/* Sidebar component styling – glassmorphic, premium look */
+/* Premium Glassmorphism Sidebar */
 
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
-  width: 80px;
-  background: rgba(20, 20, 20, 0.6);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border-right: 1px solid var(--border);
+  width: 90px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border-right: 1px solid var(--border-bright);
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: var(--safe-top);
+  padding-top: calc(80px + var(--safe-top));
   z-index: 1000;
+  transition: width 0.4s cubic-bezier(0.2, 0, 0, 1), background 0.4s;
+}
+
+.sidebar:hover {
+  width: 200px;
+  background: var(--glass-bg-hover);
 }
 
 .sidebar-item {
-  width: 60px;
-  height: 60px;
-  margin: 12px 0;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  width: 70%;
+  height: 50px;
+  margin: 8px 0;
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding-left: 12px;
   color: var(--text-dim);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.sidebar-item svg {
+  min-width: 24px;
 }
 
 .sidebar-item:hover {
-  background: var(--bg-elevated);
-  border-color: var(--accent);
+  background: var(--bg-card);
+  border-color: var(--border-bright);
   color: var(--text);
-  box-shadow: 0 0 12px var(--accent-glow);
+  box-shadow: 0 4px 15px var(--shadow-color);
+  transform: translateY(-2px);
 }
 
 .sidebar-item.active {
   background: var(--accent-gradient);
-  color: #000;
-  border-color: var(--accent);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 8px 20px var(--accent-glow);
+}
+
+.sidebar-item.active .sidebar-label {
+  color: #fff;
 }
 
 .sidebar-label {
-  font-size: 0.65rem;
-  margin-top: 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-left: 16px;
   color: var(--text-dim);
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
-/* Hide label for compact mobile view – will be overridden by media query */
+.sidebar:hover .sidebar-label {
+  opacity: 1;
+}
+
 @media (max-width: 767px) {
   .sidebar {
     display: none;
