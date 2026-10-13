@@ -21,7 +21,7 @@ function App() {
   const [downloadMode, setDownloadMode] = useState('single')
   const [urls,       setUrls]       = useState('')
   const [quality,    setQuality]    = useState(() => localStorage.getItem('vgn_quality') || '1080')
-  const [browserCookie, setBrowserCookie] = useState(() => localStorage.getItem('vgn_browser_cookie') || 'auto')
+  const [browserCookie, setBrowserCookie] = useState(() => localStorage.getItem('vgn_browser_cookie') || 'none')
   const [loading,    setLoading]    = useState(false)
   const [tasks,      setTasks]      = useState({})
   const [history,    setHistory]    = useState(() => {
