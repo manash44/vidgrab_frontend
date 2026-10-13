@@ -20,19 +20,25 @@ function App() {
   const [activeTab,  setActiveTab]  = useState('video')
   const [downloadMode, setDownloadMode] = useState('single')
   const [urls,       setUrls]       = useState('')
-  const [quality,    setQuality]    = useState('1080')
-  const [browserCookie, setBrowserCookie] = useState('auto')
+  const [quality,    setQuality]    = useState(() => localStorage.getItem('vgn_quality') || '1080')
+  const [browserCookie, setBrowserCookie] = useState(() => localStorage.getItem('vgn_browser_cookie') || 'auto')
   const [loading,    setLoading]    = useState(false)
   const [tasks,      setTasks]      = useState({})
-  const [history,    setHistory]    = useState([])
+  const [history,    setHistory]    = useState(() => {
+    try {
+      const h = localStorage.getItem('vgn_history')
+      return h ? JSON.parse(h) : []
+    } catch {
+      return []
+    }
+  })
 
   const [notificationsEnabled,  setNotificationsEnabled]  = useState(true)
-  const [theme,                 setTheme]                 = useState('dark')
+  const [theme,                 setTheme]                 = useState(() => localStorage.getItem('vgn_theme') || 'dark')
   const [connectionStatus,      setConnectionStatus]      = useState('checking')
 
   const pollRef   = useRef(null)
   const inputRef  = useRef(null)
-  const featRef   = useRef(null)
 
   const apiUrl = useCallback((path) => {
     const base = APP_CONFIG.backendUrl.replace(/\/$/, '')
@@ -73,51 +79,22 @@ function App() {
     }
   }, [apiUrl])
 
-  const handleAutoDownload = useCallback((id, filename, fileSize) => {
+  const handleAutoDownload = useCallback((id) => {
     triggerDownload(id)
-    setStatus({ status:'ready', message:"Download started. Tap Save if it didn't start.", filename, id, fileSize })
   }, [triggerDownload])
 
-  // ── Capacitor ───────────────────────────────────
-  async function checkClipboard() {
-    const hasUrl = (str) => /^https?:\/\//i.test(str) || /^www\./i.test(str) || /[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/.test(str);
-    try {
-      const { value } = await CapacitorClipboard.read()
-      if (value && hasUrl(value.trim())) {
-        setUrls(value)
-      }
-    } catch {
-      try {
-        const text = await navigator.clipboard.readText()
-        if (text && hasUrl(text.trim())) {
-          setUrls(text)
-        }
-      } catch {}
-    }
-  }
 
-  async function checkIntent() {
-    try {
-      const result = await SendIntent.checkSendIntentReceived()
-      if (result?.url) { setUrls(result.url); setView('home') }
-    } catch {}
-  }
 
   // ── Connection ──────────────────────────────────
-  async function checkConnection(retryCount = 0) {
-    if (retryCount === 0) setConnectionStatus('checking')
+  const handleTestConnection = useCallback(async () => {
+    setConnectionStatus('checking')
     try {
       await axios.get(apiUrl('/status/test'), { timeout: 10000 })
       setConnectionStatus('connected')
-    } catch (err) {
-      if (!err.response && retryCount < 6) {
-        setConnectionStatus('waking')
-        setTimeout(() => checkConnection(retryCount + 1), 8000)
-      } else {
-        setConnectionStatus('error')
-      }
+    } catch {
+      setConnectionStatus('error')
     }
-  }
+  }, [apiUrl])
 
   useEffect(() => {
     // Keep backend alive while page is open
@@ -128,17 +105,9 @@ function App() {
   }, [apiUrl])
 
   // ── Settings persist ────────────────────────────
-  function loadSettings() {
-    const h = localStorage.getItem('vgn_history')
-    if (h) setHistory(JSON.parse(h))
-    const t = localStorage.getItem('vgn_theme') || 'dark'
-    setTheme(t)
-    document.documentElement.setAttribute('data-theme', t)
-    const q = localStorage.getItem('vgn_quality') || '1080'
-    setQuality(q)
-    const b = localStorage.getItem('vgn_browser_cookie') || 'auto'
-    setBrowserCookie(b)
-  }
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
 
   useEffect(() => {
     localStorage.setItem('vgn_quality', quality)
@@ -152,7 +121,6 @@ function App() {
     const newTheme = theme === 'dark' ? 'light' : 'dark'
     setTheme(newTheme)
     localStorage.setItem('vgn_theme', newTheme)
-    document.documentElement.setAttribute('data-theme', newTheme)
   }
 
   function clearHistory() {
@@ -163,9 +131,66 @@ function App() {
 
   // ── Init ────────────────────────────────────────
   useEffect(() => {
-    checkConnection(); loadSettings(); checkClipboard(); checkIntent()
-    CapacitorApp.addListener('appUrlOpen', () => {})
-  }, [])
+    let cancelled = false
+    async function initConnection() {
+      for (let retryCount = 0; retryCount <= 6; retryCount++) {
+        try {
+          await axios.get(apiUrl('/status/test'), { timeout: 10000 })
+          if (!cancelled) setConnectionStatus('connected')
+          return
+        } catch (err) {
+          if (!err.response && retryCount < 6) {
+            if (!cancelled) setConnectionStatus('waking')
+            await new Promise(resolve => setTimeout(resolve, 8000))
+          } else {
+            if (!cancelled) setConnectionStatus('error')
+            return
+          }
+        }
+      }
+    }
+
+    async function checkClipboard() {
+      const hasUrl = (str) => /^https?:\/\//i.test(str) || /^www\./i.test(str) || /[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/.test(str);
+      try {
+        const { value } = await CapacitorClipboard.read()
+        if (!cancelled && value && hasUrl(value.trim())) {
+          setUrls(value)
+        }
+      } catch {
+        try {
+          const text = await navigator.clipboard.readText()
+          if (!cancelled && text && hasUrl(text.trim())) {
+            setUrls(text)
+          }
+        } catch {
+          // Clipboard read failed or denied
+        }
+      }
+    }
+
+    async function checkIntent() {
+      try {
+        const result = await SendIntent.checkSendIntentReceived()
+        if (!cancelled && result?.url) { setUrls(result.url); setView('home') }
+      } catch {
+        // Send intent check failed or unsupported
+      }
+    }
+
+    initConnection()
+    checkClipboard()
+    checkIntent()
+    try {
+      CapacitorApp.addListener('appUrlOpen', () => {})
+    } catch {
+      // Not running in Capacitor
+    }
+
+    return () => {
+      cancelled = true
+    }
+  }, [apiUrl])
 
   useEffect(() => {
     if (history.length > 0) localStorage.setItem('vgn_history', JSON.stringify(history))
@@ -192,9 +217,13 @@ function App() {
             if (data.status === 'ready' && tasks[tid]?.status !== 'ready') {
               addToHistory(newTasks[tid].url, data.filename || 'Download', new Date().toLocaleString())
               if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
-                try { new Notification('Download Ready!', { body: data.filename }) } catch {}
+                try {
+                  new Notification('Download Ready!', { body: data.filename })
+                } catch {
+                  // Notification display failed
+                }
               }
-              handleAutoDownload(tid, data.filename, data.file_size_str || data.size)
+              handleAutoDownload(tid)
               
               // Automatically remove task from UI after 4 seconds to prevent long list
               setTimeout(() => {
@@ -302,7 +331,9 @@ function App() {
           }
         }
       }
-    } catch {}
+    } catch {
+      // Clipboard read failed or permission denied
+    }
   }
 
   const handleHistorySelect = (link) => {
@@ -369,7 +400,7 @@ function App() {
                 browserCookie={browserCookie} setBrowserCookie={setBrowserCookie}
                 notificationsEnabled={notificationsEnabled} setNotificationsEnabled={setNotificationsEnabled}
                 clearHistory={clearHistory}
-                connectionStatus={connectionStatus} checkConnection={checkConnection}
+                connectionStatus={connectionStatus} checkConnection={handleTestConnection}
               />
             )}
           </Suspense>

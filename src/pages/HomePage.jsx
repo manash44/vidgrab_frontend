@@ -104,9 +104,6 @@ const HomePage = ({
                 placeholder={downloadMode === 'single' ? "Paste a single video link here..." : "Paste multiple video links here (one per line)…"}
                 value={urls}
                 onChange={e => setUrls(e.target.value)}
-                onPaste={e => {
-                  // Let native paste happen, don't auto-submit
-                }}
                 disabled={loading}
                 autoComplete="off"
                 rows={downloadMode === 'single' ? 2 : 4}
@@ -162,7 +159,7 @@ const HomePage = ({
             >
               {loading
                 ? <><span className="spin"><Loader2 size={20}/></span> Submitting tasks…</>
-                : <><Download size={20}/> {activeTab === 'audio' ? 'Convert to MP3' : 'Download Video'}</>
+                : <><Download size={20}/> {activeTab === 'audio' ? 'Convert to MP3 (with Cover Art)' : 'Download Video'}</>
               }
             </button>
           </form>
