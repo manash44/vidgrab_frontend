@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import axios from 'axios'
 import {
   Settings, Bell, Trash2, Download,
-  Video, History, X, Wifi, WifiOff, Sun, Moon
+  Video, History, X, Wifi, WifiOff, Sun, Moon, Loader2
 } from 'lucide-react'
 import './App.css'
 import Sidebar from './components/Sidebar'
@@ -361,10 +361,32 @@ function App() {
             </div>
             <span>VidGetNow</span>
           </div>
-          <div className="theme-toggle-pill" onClick={toggleTheme}>
-            <div className={`theme-indicator ${theme === 'light' ? 'light' : 'dark'}`} />
-            <span className={theme === 'light' ? 'active' : ''}><Sun size={14}/> Light</span>
-            <span className={theme === 'dark' ? 'active' : ''}><Moon size={14}/> Dark</span>
+
+          <div className="top-bar-right">
+            <div className="conn-status-badge">
+              {connectionStatus === 'connected' ? (
+                <>
+                  <span className="conn-dot online" />
+                  <span className="conn-label">Server Online</span>
+                </>
+              ) : connectionStatus === 'waking' ? (
+                <>
+                  <Loader2 className="spin" size={13} color="#fbbf24" />
+                  <span className="conn-label waking">Waking (~50s)</span>
+                </>
+              ) : (
+                <>
+                  <span className="conn-dot offline" />
+                  <span className="conn-label offline">Connecting…</span>
+                </>
+              )}
+            </div>
+
+            <div className="theme-toggle-pill" onClick={toggleTheme}>
+              <div className={`theme-indicator ${theme === 'light' ? 'light' : 'dark'}`} />
+              <span className={theme === 'light' ? 'active' : ''}><Sun size={14}/> Light</span>
+              <span className={theme === 'dark' ? 'active' : ''}><Moon size={14}/> Dark</span>
+            </div>
           </div>
         </header>
 
@@ -377,7 +399,6 @@ function App() {
           }>
             {view === 'home' && (
               <HomePage
-                connectionStatus={connectionStatus}
                 activeTab={activeTab} setActiveTab={setActiveTab}
                 downloadMode={downloadMode} setDownloadMode={setDownloadMode}
                 urls={urls} setUrls={setUrls}

@@ -1,8 +1,8 @@
 import React from 'react'
 import {
   Video, Headphones, X, Clipboard,
-  Download, CheckCircle, Zap, Shield,
-  Globe, Loader2, Wifi, WifiOff
+  Download, CheckCircle, Zap, Loader2,
+  RotateCcw
 } from 'lucide-react'
 
 const PLATFORMS = [
@@ -16,7 +16,6 @@ const PLATFORMS = [
 ]
 
 const HomePage = ({
-  connectionStatus,
   activeTab, setActiveTab,
   downloadMode, setDownloadMode,
   urls, setUrls,
@@ -29,21 +28,12 @@ const HomePage = ({
 
   return (
     <div className="fade-up">
-      {/* Connection pill */}
-      <div style={{ display:'flex', justifyContent:'flex-end', padding:'10px 16px 0', gap:'6px', alignItems:'center' }}>
-        {connectionStatus === 'connected'
-          ? <><Wifi size={13} color="#4ade80"/><span style={{fontSize:'0.72rem',color:'#4ade80',fontWeight:600}}>Server Online</span></>
-          : connectionStatus === 'waking'
-          ? <><Loader2 className="spin" size={13} color="#fbbf24"/><span style={{fontSize:'0.72rem',color:'#fbbf24',fontWeight:600}}>Waking Server (Takes ~50s)</span></>
-          : <><WifiOff size={13} color="#f87171"/><span style={{fontSize:'0.72rem',color:'#f87171',fontWeight:600}}>Connecting…</span></>
-        }
-      </div>
-
       {/* Platform strip */}
       <div className="platform-strip">
         {PLATFORMS.map(p => (
           <button
             key={p.name}
+            type="button"
             className={`platform-chip ${activePlatform === p.name ? 'active' : ''}`}
             onClick={() => setActivePlatform(p.name)}
           >
@@ -63,12 +53,14 @@ const HomePage = ({
           {/* Format toggle */}
           <div className="fmt-toggle">
             <button
+              type="button"
               className={`fmt-btn ${activeTab === 'video' ? 'active' : ''}`}
               onClick={() => setActiveTab('video')}
             >
               <Video size={16} /> Video
             </button>
             <button
+              type="button"
               className={`fmt-btn ${activeTab === 'audio' ? 'active' : ''}`}
               onClick={() => setActiveTab('audio')}
             >
@@ -98,37 +90,75 @@ const HomePage = ({
 
           {/* URL input */}
           <form onSubmit={handleDownload}>
-            <div className="search-box" style={{ alignItems: 'flex-start' }}>
-              <textarea
-                ref={inputRef}
-                placeholder={downloadMode === 'single' ? "Paste a single video link here..." : "Paste multiple video links here (one per line)…"}
-                value={urls}
-                onChange={e => setUrls(e.target.value)}
-                disabled={loading}
-                autoComplete="off"
-                rows={downloadMode === 'single' ? 2 : 4}
-                style={{
-                  width: '100%',
-                  background: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  color: 'var(--text)',
-                  fontSize: '1.05rem',
-                  resize: 'vertical',
-                  minHeight: downloadMode === 'single' ? '60px' : '100px',
-                  fontFamily: 'inherit',
-                  lineHeight: '1.5'
-                }}
-              />
-              {urls && (
-                <button type="button" className="clear-btn" onClick={() => setUrls('')} style={{ alignSelf: 'flex-start', background: 'var(--bg-elevated)', borderRadius: '50%', padding: '4px', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>
-                  <X size={14} />
+            {downloadMode === 'single' ? (
+              <div className="search-box single-mode">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  inputMode="url"
+                  placeholder="Paste a single video link here..."
+                  value={urls}
+                  onChange={e => setUrls(e.target.value)}
+                  disabled={loading}
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
+                  className="search-input-field"
+                />
+                {urls && (
+                  <button
+                    type="button"
+                    className="clear-icon-btn"
+                    onClick={() => setUrls('')}
+                    title="Clear"
+                    aria-label="Clear link"
+                  >
+                    <X size={15} />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="paste-chip"
+                  onClick={handlePaste}
+                >
+                  <Clipboard size={14} /> Paste
                 </button>
-              )}
-              <button type="button" className="paste-chip" onClick={handlePaste} style={{ alignSelf: 'flex-start', marginTop: '4px', padding: '12px 20px', borderRadius: '20px' }}>
-                <Clipboard size={14} style={{marginRight:6,verticalAlign:'middle'}}/>Paste
-              </button>
-            </div>
+              </div>
+            ) : (
+              <div className="search-box batch-mode">
+                <div className="batch-header">
+                  <span className="batch-label">Batch Mode (One URL per line)</span>
+                  <div className="batch-actions">
+                    {urls && (
+                      <button
+                        type="button"
+                        className="batch-clear-btn"
+                        onClick={() => setUrls('')}
+                      >
+                        <X size={13} /> Clear
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="paste-chip batch-paste-btn"
+                      onClick={handlePaste}
+                    >
+                      <Clipboard size={13} /> Paste
+                    </button>
+                  </div>
+                </div>
+                <textarea
+                  ref={inputRef}
+                  placeholder="Paste multiple video links here (one per line)…&#10;https://...&#10;https://..."
+                  value={urls}
+                  onChange={e => setUrls(e.target.value)}
+                  disabled={loading}
+                  autoComplete="off"
+                  rows={4}
+                  className="batch-textarea"
+                />
+              </div>
+            )}
 
             {/* Quality row (video only) */}
             {activeTab === 'video' && (
@@ -155,7 +185,7 @@ const HomePage = ({
               type="submit"
               className={`dl-btn ${loading ? 'processing' : ''}`}
               disabled={!urls || loading}
-              style={{ padding: '24px', borderRadius: '28px', marginTop: '32px' }}
+              style={{ padding: '22px', borderRadius: '28px', marginTop: '28px' }}
             >
               {loading
                 ? <><span className="spin"><Loader2 size={20}/></span> Submitting tasks…</>
@@ -200,6 +230,30 @@ const HomePage = ({
                   <p className="status-msg" style={{ marginTop: '16px' }}>
                     {st.message === 'Processing conversion...' ? 'Finalizing file…' : st.message}
                   </p>
+                )}
+
+                {st.status === 'error' && st.url && (
+                  <div style={{ marginTop: '16px', display: 'flex', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleDownload(null, st.url)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: 'var(--bg-elevated)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '12px',
+                        padding: '8px 16px',
+                        color: 'var(--text)',
+                        fontSize: '0.85rem',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <RotateCcw size={14} color="var(--accent)" /> Retry Download
+                    </button>
+                  </div>
                 )}
 
                 {(st.speed || st.eta) && st.status === 'downloading' && (
