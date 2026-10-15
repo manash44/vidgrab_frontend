@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import axios from 'axios'
 import {
   Settings, Bell, Trash2, Download,
-  Video, History, X, Wifi, WifiOff, Sun, Moon, Loader2
+  Video, History, X, Wifi, WifiOff, Sun, Moon, Loader2, Info, Sparkles
 } from 'lucide-react'
 import './App.css'
 import Sidebar from './components/Sidebar'
@@ -36,14 +36,15 @@ function App() {
   const [notificationsEnabled,  setNotificationsEnabled]  = useState(true)
   const [theme,                 setTheme]                 = useState(() => localStorage.getItem('vgn_theme') || 'dark')
   const [connectionStatus,      setConnectionStatus]      = useState('checking')
+  const [backendUrl,            setBackendUrl]            = useState(() => localStorage.getItem('vgn_backend_url') || APP_CONFIG.backendUrl)
 
   const pollRef   = useRef(null)
   const inputRef  = useRef(null)
 
   const apiUrl = useCallback((path) => {
-    const base = APP_CONFIG.backendUrl.replace(/\/$/, '')
+    const base = (backendUrl || APP_CONFIG.backendUrl).replace(/\/$/, '')
     return `${base}${path}`
-  }, [])
+  }, [backendUrl])
 
   const normalizeUrl = useCallback((value) => {
     const trimmed = value.trim()
@@ -232,7 +233,6 @@ function App() {
                   delete updated[tid];
                   return updated;
                 });
-                setUrls(''); // Clear the input field for the next link
               }, 4000);
             }
           } catch (err) {
@@ -273,6 +273,10 @@ function App() {
     
     if (links.length === 0) return
     
+    if (overrideUrls === null) {
+      setUrls('')
+    }
+
     setLoading(true)
     
     // Clear previously finished/errored tasks to keep the list clean
@@ -341,6 +345,20 @@ function App() {
     window.scrollTo({ top:0, behavior:'smooth' })
   }
 
+  const handleSaveBackendUrl = (newUrl) => {
+    const trimmed = (newUrl || '').trim()
+    const target = trimmed || APP_CONFIG.backendUrl
+    setBackendUrl(target)
+    if (trimmed && trimmed !== APP_CONFIG.backendUrl) {
+      localStorage.setItem('vgn_backend_url', trimmed)
+    } else {
+      localStorage.removeItem('vgn_backend_url')
+    }
+    setTimeout(() => {
+      handleTestConnection()
+    }, 100)
+  }
+
   // ── Render ──────────────────────────────────────
   return (
     <div className="app-container">
@@ -357,13 +375,19 @@ function App() {
         <header className="top-bar">
           <div className="top-bar-logo" onClick={() => setView('home')}>
             <div className="logo-pill">
-              <Download size={18}/>
+              <Download size={20}/>
             </div>
             <span>VidGetNow</span>
+            <span className="top-bar-badge">PRO</span>
           </div>
 
           <div className="top-bar-right">
-            <div className="conn-status-badge">
+            <div
+              className="conn-status-badge"
+              onClick={() => setView('settings')}
+              style={{ cursor: 'pointer' }}
+              title="Click to manage server connection"
+            >
               {connectionStatus === 'connected' ? (
                 <>
                   <span className="conn-dot online" />
@@ -374,6 +398,11 @@ function App() {
                   <Loader2 className="spin" size={13} color="#fbbf24" />
                   <span className="conn-label waking">Waking (~50s)</span>
                 </>
+              ) : connectionStatus === 'checking' ? (
+                <>
+                  <span className="conn-dot checking" />
+                  <span className="conn-label">Testing…</span>
+                </>
               ) : (
                 <>
                   <span className="conn-dot offline" />
@@ -382,10 +411,15 @@ function App() {
               )}
             </div>
 
-            <div className="theme-toggle-pill" onClick={toggleTheme}>
-              <div className={`theme-indicator ${theme === 'light' ? 'light' : 'dark'}`} />
-              <span className={theme === 'light' ? 'active' : ''}><Sun size={14}/> Light</span>
-              <span className={theme === 'dark' ? 'active' : ''}><Moon size={14}/> Dark</span>
+            <div className="theme-toggle-pill" onClick={toggleTheme} title="Switch Theme">
+              <div className={`theme-btn-option ${theme === 'light' ? 'active' : ''}`}>
+                <Sun size={13} />
+                <span>Light</span>
+              </div>
+              <div className={`theme-btn-option ${theme === 'dark' ? 'active' : ''}`}>
+                <Moon size={13} />
+                <span>Dark</span>
+              </div>
             </div>
           </div>
         </header>
@@ -393,8 +427,8 @@ function App() {
         {/* ── Main scroll ── */}
         <main className="main-scroll">
           <Suspense fallback={
-            <div style={{ display:'flex', justifyContent:'center', padding:'80px 0', color:'var(--muted)' }}>
-              Loading…
+            <div style={{ display:'flex', justifyContent:'center', padding:'80px 0', color:'var(--text-muted)' }}>
+              <Loader2 className="spin" size={28} color="var(--accent)" />
             </div>
           }>
             {view === 'home' && (
@@ -422,6 +456,7 @@ function App() {
                 notificationsEnabled={notificationsEnabled} setNotificationsEnabled={setNotificationsEnabled}
                 clearHistory={clearHistory}
                 connectionStatus={connectionStatus} checkConnection={handleTestConnection}
+                backendUrl={backendUrl} onSaveBackendUrl={handleSaveBackendUrl} defaultBackendUrl={APP_CONFIG.backendUrl}
               />
             )}
           </Suspense>
@@ -431,15 +466,19 @@ function App() {
         <nav className="bottom-nav">
           <button className={`nav-tab ${view === 'home' ? 'active' : ''}`} onClick={() => setView('home')}>
             <div className="nav-icon"><Video size={20}/></div>
-            Home
+            <span>Home</span>
           </button>
           <button className={`nav-tab ${view === 'history' ? 'active' : ''}`} onClick={() => setView('history')}>
             <div className="nav-icon"><History size={20}/></div>
-            Downloads
+            <span>Library</span>
+          </button>
+          <button className={`nav-tab ${view === 'about' ? 'active' : ''}`} onClick={() => setView('about')}>
+            <div className="nav-icon"><Info size={20}/></div>
+            <span>Features</span>
           </button>
           <button className={`nav-tab ${view === 'settings' ? 'active' : ''}`} onClick={() => setView('settings')}>
             <div className="nav-icon"><Settings size={20}/></div>
-            Settings
+            <span>Settings</span>
           </button>
         </nav>
       </div>

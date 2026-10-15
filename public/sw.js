@@ -32,9 +32,13 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - network first, fallback to cache
 self.addEventListener('fetch', (event) => {
-  // Skip API requests - always go to network
-  if (event.request.url.includes('/download') ||
-    event.request.url.includes('/status/')) {
+  // Skip API and large file requests - always go directly to network
+  if (
+    event.request.url.includes('/download') ||
+    event.request.url.includes('/status') ||
+    event.request.url.includes('/file/') ||
+    event.request.url.includes('/api/')
+  ) {
     return;
   }
 

@@ -1,84 +1,171 @@
-/* Premium Glassmorphism Sidebar */
+/* ============================================================
+   VidGetNow — Futuristic Glass Floating Sidebar
+   ============================================================ */
 
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
-  width: 90px;
+  width: 92px;
   background: var(--glass-bg);
-  backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
-  border-right: 1px solid var(--border-bright);
-  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(36px) saturate(200%);
+  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  border-right: 1px solid var(--border);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: calc(80px + var(--safe-top));
+  padding: 24px 0 32px 0;
   z-index: 1000;
-  transition: width 0.4s cubic-bezier(0.2, 0, 0, 1), background 0.4s;
+  transition: width 0.32s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s;
+  overflow: hidden;
 }
 
 .sidebar:hover {
-  width: 200px;
+  width: 220px;
   background: var(--glass-bg-hover);
+  border-right-color: var(--border-bright);
+}
+
+.sidebar-logo-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0 24px 28px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+
+.sidebar-logo-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--accent-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  box-shadow: 0 4px 16px var(--accent-glow);
+  flex-shrink: 0;
+}
+
+.sidebar-logo-text {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar:hover .sidebar-logo-text {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.sidebar-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 0 14px;
+  flex: 1;
 }
 
 .sidebar-item {
-  width: 70%;
-  height: 50px;
-  margin: 8px 0;
+  width: 100%;
+  height: 52px;
+  border-radius: var(--radius-md);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding-left: 12px;
+  padding: 0 18px;
   color: var(--text-dim);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+  position: relative;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
   white-space: nowrap;
 }
 
-.sidebar-item svg {
-  min-width: 24px;
+.sidebar-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
 .sidebar-item:hover {
   background: var(--bg-card);
-  border-color: var(--border-bright);
+  border-color: var(--border);
   color: var(--text);
-  box-shadow: 0 4px 15px var(--shadow-color);
-  transform: translateY(-2px);
+}
+
+.sidebar-item:hover .sidebar-item-icon {
+  transform: scale(1.12);
+  color: var(--accent);
 }
 
 .sidebar-item.active {
   background: var(--accent-gradient);
-  color: #fff;
+  color: #FFFFFF;
   border-color: transparent;
-  box-shadow: 0 8px 20px var(--accent-glow);
+  box-shadow: 0 4px 18px var(--accent-glow);
 }
 
-.sidebar-item.active .sidebar-label {
-  color: #fff;
+.sidebar-item.active .sidebar-item-icon {
+  color: #FFFFFF;
+  transform: scale(1.08);
 }
 
 .sidebar-label {
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 0.92rem;
+  font-weight: 700;
   margin-left: 16px;
-  color: var(--text-dim);
   opacity: 0;
-  transition: opacity 0.3s;
+  transform: translateX(-6px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  color: inherit;
 }
 
 .sidebar:hover .sidebar-label {
   opacity: 1;
+  transform: translateX(0);
 }
 
-@media (max-width: 767px) {
+/* Sidebar Footer / Pro Badge */
+.sidebar-footer {
+  width: 100%;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sidebar-pro-pill {
+  width: 100%;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 42, 95, 0.08);
+  border: 1px solid rgba(255, 42, 95, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+@media (max-width: 868px) {
   .sidebar {
     display: none;
   }
